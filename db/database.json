@@ -1,0 +1,24 @@
+{
+  "usuarios": [
+    {
+      "id": "user-admin-001",
+      "usuario": "admin",
+      "contrasena": "$2a$10$ODfpGC.vBRVnzkFwExyKxulMKS1N.0tgpco6HrjN/7d.q7ydDF5J.",
+      "rol": "admin",
+      "nombre": "Administrador",
+      "fechaRegistro": "2025-01-01T00:00:00.000Z",
+      "activo": true
+    },
+    {
+      "id": "user-obra-001",
+      "usuario": "obra",
+      "contrasena": "$2a$10$naRuuSjxa99KaJYdNVI95uK4FqzoZxpOo7K8vVVl7DvLnBpTTOXU.",
+      "rol": "usuario",
+      "nombre": "Usuario Obra",
+      "fechaRegistro": "2025-01-01T00:00:00.000Z",
+      "activo": true
+    }
+  ],
+  "obrasRegistradas": [],
+  "formularios": {}
+}

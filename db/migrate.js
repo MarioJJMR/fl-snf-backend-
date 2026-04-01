@@ -1,0 +1,32 @@
+require('dotenv').config();
+const mysql = require('mysql2/promise');
+
+async function migrate() {
+  const conn = await mysql.createConnection({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'fl_snf_db'
+  });
+
+  const dbName = process.env.DB_NAME || 'fl_snf_db';
+  const [cols] = await conn.query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
+    [dbName, 'usuarios', 'obra_id']
+  );
+
+  if (cols.length === 0) {
+    await conn.query('ALTER TABLE usuarios ADD COLUMN obra_id VARCHAR(36) NULL');
+    console.log('✅ Columna obra_id agregada a usuarios');
+  } else {
+    console.log('✓ Columna obra_id ya existe');
+  }
+
+  await conn.end();
+  console.log('Migración completa');
+}
+
+migrate().catch(err => {
+  console.error('❌ Error en migración:', err.message);
+  process.exit(1);
+});
