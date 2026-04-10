@@ -5,9 +5,10 @@ require('dotenv').config();
 
 async function seed() {
   const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    host:     process.env.DB_HOST     || process.env.MYSQLHOST     || 'localhost',
+    port:     process.env.DB_PORT     || process.env.MYSQLPORT     || 3306,
+    user:     process.env.DB_USER     || process.env.MYSQLUSER     || 'root',
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
     multipleStatements: true
   });
 
@@ -216,6 +217,6 @@ async function safeAlter(conn, sql, skipMsg) {
 }
 
 seed().catch(err => {
-  console.error('❌ Error en seed:', err.message);
+  console.error('❌ Error en seed:', err.message || err);
   process.exit(1);
 });

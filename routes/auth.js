@@ -6,6 +6,9 @@ const authController = require('../controllers/authController');
 // POST /api/auth/login
 router.post('/login', authController.login);
 
+// POST /api/auth/google
+router.post('/google', authController.loginGoogle);
+
 // POST /api/auth/logout
 router.post('/logout', verifyToken, authController.logout);
 
