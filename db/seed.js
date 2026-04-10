@@ -3,6 +3,12 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
+// DEBUG: mostrar variables MYSQL disponibles
+console.log('🔍 Variables de entorno disponibles:');
+Object.keys(process.env)
+  .filter(k => k.includes('MYSQL') || k.includes('DB_') || k.includes('DATABASE'))
+  .forEach(k => console.log(`   ${k} = ${process.env[k]?.slice(0, 30)}...`));
+
 async function seed() {
   const url = process.env.MYSQL_PUBLIC_URL;
   if (!url) {
