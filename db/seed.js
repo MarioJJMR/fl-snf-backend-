@@ -4,32 +4,21 @@ const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 async function seed() {
-  const mysqlUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
-
-  let connConfig;
-  if (mysqlUrl) {
-    const u = new URL(mysqlUrl);
-    connConfig = {
-      host:               u.hostname,
-      port:               Number(u.port) || 3306,
-      user:               u.username,
-      password:           u.password,
-      multipleStatements: true
-    };
-    console.log(`🔌 Conectando a MySQL via URL: ${u.username}@${u.hostname}:${u.port || 3306}`);
-  } else {
-    const dbHost = process.env.DB_HOST || process.env.MYSQLHOST || 'localhost';
-    const dbPort = process.env.DB_PORT || process.env.MYSQLPORT || 3306;
-    const dbUser = process.env.DB_USER || process.env.MYSQLUSER || 'root';
-    connConfig = {
-      host:               dbHost,
-      port:               Number(dbPort),
-      user:               dbUser,
-      password:           process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
-      multipleStatements: true
-    };
-    console.log(`🔌 Conectando a MySQL: ${dbUser}@${dbHost}:${dbPort}`);
+  const url = process.env.MYSQL_PUBLIC_URL;
+  if (!url) {
+    throw new Error('MYSQL_PUBLIC_URL no está definida. Agrégala en Railway → backend service → Variables.');
   }
+
+  const u = new URL(url);
+  const connConfig = {
+    host:               u.hostname,
+    port:               Number(u.port) || 3306,
+    user:               decodeURIComponent(u.username),
+    password:           decodeURIComponent(u.password),
+    multipleStatements: true
+  };
+
+  console.log(`🔌 Conectando a MySQL: ${connConfig.user}@${connConfig.host}:${connConfig.port}`);
 
   let conn;
   let attempts = 0;
