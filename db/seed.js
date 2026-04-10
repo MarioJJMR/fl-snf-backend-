@@ -4,13 +4,34 @@ const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 async function seed() {
-  const conn = await mysql.createConnection({
-    host:     process.env.DB_HOST     || process.env.MYSQLHOST     || 'localhost',
-    port:     process.env.DB_PORT     || process.env.MYSQLPORT     || 3306,
-    user:     process.env.DB_USER     || process.env.MYSQLUSER     || 'root',
-    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
-    multipleStatements: true
-  });
+  const dbHost = process.env.DB_HOST     || process.env.MYSQLHOST     || 'localhost';
+  const dbPort = process.env.DB_PORT     || process.env.MYSQLPORT     || 3306;
+  const dbUser = process.env.DB_USER     || process.env.MYSQLUSER     || 'root';
+  const dbName = process.env.DB_NAME     || process.env.MYSQLDATABASE || 'fl_snf_db';
+
+  console.log(`🔌 Conectando a MySQL: ${dbUser}@${dbHost}:${dbPort} (db: ${dbName})`);
+
+  let conn;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (attempts < maxAttempts) {
+    try {
+      conn = await mysql.createConnection({
+        host:     dbHost,
+        port:     Number(dbPort),
+        user:     dbUser,
+        password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
+        multipleStatements: true
+      });
+      break;
+    } catch (err) {
+      attempts++;
+      console.log(`  ↳ Intento ${attempts}/${maxAttempts} fallido (${err.code}). Reintentando en 3s...`);
+      if (attempts >= maxAttempts) throw err;
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
 
   console.log('🔧 Creando base de datos y tablas...');
 
