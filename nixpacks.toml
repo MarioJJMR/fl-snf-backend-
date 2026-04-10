@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = []
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "npm run seed && node server.js"

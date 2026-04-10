@@ -18,17 +18,21 @@ const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+  /^https:\/\/.*\.up\.railway\.app$/,
+  /^https:\/\/.*\.netlify\.app$/,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? (process.env.FRONTEND_URL || 'https://TU-PROYECTO.netlify.app') // ← agrega FRONTEND_URL en Railway
-    : (origin, callback) => {
-        // En desarrollo permite cualquier origen localhost (cualquier puerto) y apertura directa de archivo
-        if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('CORS: origen no permitido'));
-        }
-      },
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow server-to-server / curl
+    const allowed = allowedOrigins.some(o =>
+      o instanceof RegExp ? o.test(origin) : o === origin
+    );
+    callback(allowed ? null : new Error('CORS: origen no permitido'), allowed);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
