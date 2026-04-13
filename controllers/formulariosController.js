@@ -36,6 +36,10 @@ const saveFormulario = async (req, res) => {
     const { obraId, formKey } = req.params;
     const datos = req.body;
 
+    const [obra] = await pool.query('SELECT id FROM obras WHERE id = ?', [obraId]);
+    if (obra.length === 0)
+      return res.status(404).json({ success: false, error: `Obra con id '${obraId}' no encontrada` });
+
     await pool.query(
       `INSERT INTO formularios (obra_id, form_key, datos, actualizado_por)
        VALUES (?, ?, ?, ?)
