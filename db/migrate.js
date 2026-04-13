@@ -22,6 +22,18 @@ async function migrate() {
     console.log('✓ Columna obra_id ya existe');
   }
 
+  // Migración: columna email para Google OAuth
+  const [emailCols] = await conn.query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
+    [dbName, 'usuarios', 'email']
+  );
+  if (emailCols.length === 0) {
+    await conn.query('ALTER TABLE usuarios ADD COLUMN email VARCHAR(150) NULL UNIQUE AFTER nombre');
+    console.log('✅ Columna email agregada a usuarios');
+  } else {
+    console.log('✓ Columna email ya existe');
+  }
+
   await conn.end();
   console.log('Migración completa');
 }
