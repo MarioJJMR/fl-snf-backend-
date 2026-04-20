@@ -1,13 +1,26 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const mysql = require('mysql2/promise');
 
 async function migrate() {
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'fl_snf_db'
-  });
+  let connConfig;
+  if (process.env.MYSQL_PUBLIC_URL) {
+    const u = new URL(process.env.MYSQL_PUBLIC_URL);
+    connConfig = {
+      host:     u.hostname,
+      port:     Number(u.port) || 3306,
+      user:     decodeURIComponent(u.username),
+      password: decodeURIComponent(u.password),
+      database: u.pathname.replace('/', '')
+    };
+  } else {
+    connConfig = {
+      host:     process.env.DB_HOST || 'localhost',
+      user:     process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'fl_snf_db'
+    };
+  }
+  const conn = await mysql.createConnection(connConfig);
 
   const dbName = process.env.DB_NAME || 'fl_snf_db';
   const [cols] = await conn.query(
