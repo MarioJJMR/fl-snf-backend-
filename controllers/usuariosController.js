@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const getAll = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, usuario, rol, nombre, obra_id, activo, fecha_registro FROM usuarios WHERE activo = 1'
+      'SELECT id, usuario, rol, nombre, email, obra_id, activo, fecha_registro FROM usuarios WHERE activo = 1'
     );
     res.json({ success: true, data: rows });
   } catch (err) {
@@ -15,7 +15,7 @@ const getAll = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { usuario, contrasena, rol, nombre, obra_id } = req.body;
+    const { usuario, contrasena, rol, nombre, email, obra_id } = req.body;
     if (!usuario || !contrasena)
       return res.status(400).json({ success: false, error: 'usuario y contrasena requeridos' });
 
@@ -26,11 +26,11 @@ const create = async (req, res) => {
     const id = uuidv4();
     const hash = await bcrypt.hash(contrasena, 10);
     await pool.query(
-      'INSERT INTO usuarios (id, usuario, contrasena, rol, nombre, obra_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, usuario, hash, rol || 'usuario', nombre || usuario, obra_id || null]
+      'INSERT INTO usuarios (id, usuario, contrasena, rol, nombre, email, obra_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, usuario, hash, rol || 'usuario', nombre || usuario, email || null, obra_id || null]
     );
 
-    res.status(201).json({ success: true, data: { id, usuario, rol, nombre, obra_id: obra_id || null }, message: 'Usuario creado' });
+    res.status(201).json({ success: true, data: { id, usuario, rol, nombre, email: email || null, obra_id: obra_id || null }, message: 'Usuario creado' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -39,7 +39,7 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { contrasena, nombre, rol, obra_id } = req.body;
+    const { contrasena, nombre, rol, email, obra_id } = req.body;
 
     const [check] = await pool.query('SELECT id FROM usuarios WHERE id = ? AND activo = 1', [id]);
     if (check.length === 0)
@@ -47,12 +47,12 @@ const update = async (req, res) => {
 
     if (contrasena) {
       const hash = await bcrypt.hash(contrasena, 10);
-      await pool.query('UPDATE usuarios SET contrasena=?, nombre=?, rol=?, obra_id=? WHERE id=?', [hash, nombre, rol, obra_id ?? null, id]);
+      await pool.query('UPDATE usuarios SET contrasena=?, nombre=?, rol=?, email=?, obra_id=? WHERE id=?', [hash, nombre, rol, email ?? null, obra_id ?? null, id]);
     } else {
-      await pool.query('UPDATE usuarios SET nombre=?, rol=?, obra_id=? WHERE id=?', [nombre, rol, obra_id ?? null, id]);
+      await pool.query('UPDATE usuarios SET nombre=?, rol=?, email=?, obra_id=? WHERE id=?', [nombre, rol, email ?? null, obra_id ?? null, id]);
     }
 
-    const [rows] = await pool.query('SELECT id, usuario, rol, nombre, obra_id, activo FROM usuarios WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT id, usuario, rol, nombre, email, obra_id, activo FROM usuarios WHERE id = ?', [id]);
     res.json({ success: true, data: rows[0], message: 'Usuario actualizado' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

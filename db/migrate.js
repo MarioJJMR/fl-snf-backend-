@@ -22,7 +22,7 @@ async function migrate() {
   }
   const conn = await mysql.createConnection(connConfig);
 
-  const dbName = process.env.DB_NAME || 'fl_snf_db';
+  const dbName = connConfig.database;
   const [cols] = await conn.query(
     'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
     [dbName, 'usuarios', 'obra_id']
