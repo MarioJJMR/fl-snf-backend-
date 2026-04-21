@@ -47,6 +47,27 @@ async function migrate() {
     console.log('✓ Columna email ya existe');
   }
 
+  // Migración: tabla password_reset_tokens
+  const [resetTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'password_reset_tokens']
+  );
+  if (resetTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE password_reset_tokens (
+        token      VARCHAR(36) PRIMARY KEY,
+        user_id    VARCHAR(36) NOT NULL,
+        expira_en  DATETIME NOT NULL,
+        usado      TINYINT(1) DEFAULT 0,
+        INDEX idx_user (user_id),
+        INDEX idx_expira (expira_en)
+      )
+    `);
+    console.log('✅ Tabla password_reset_tokens creada');
+  } else {
+    console.log('✓ Tabla password_reset_tokens ya existe');
+  }
+
   await conn.end();
   console.log('Migración completa');
 }
