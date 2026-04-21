@@ -12,6 +12,7 @@ const usuariosRoutes = require('./routes/usuarios');
 const formulariosRoutes = require('./routes/formularios');
 const proyectosRoutes = require('./routes/proyectos');
 const documentosRoutes = require('./routes/documentos');
+const correoRoutes = require('./routes/correo');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -83,6 +84,7 @@ app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/formularios', formulariosRoutes);
 app.use('/api/proyectos', proyectosRoutes);
 app.use('/api/documentos', documentosRoutes);
+app.use('/api/correo', correoRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
