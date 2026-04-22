@@ -58,7 +58,13 @@ router.post('/sondeo', verifyToken, async (req, res) => {
     res.json({ success: true, message: 'Sondeo enviado correctamente' });
   } catch (err) {
     console.error('[Correo] Error:', err.message);
-    res.status(500).json({ success: false, error: 'Error al enviar el correo. Verifica la configuración SMTP.' });
+    res.status(500).json({
+      success: false,
+      error: 'Error al enviar el correo.',
+      detail: err.message,
+      code: err.code || null,
+      smtp: err.response || null
+    });
   }
 });
 
