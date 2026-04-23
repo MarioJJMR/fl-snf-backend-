@@ -47,6 +47,18 @@ async function migrate() {
     console.log('✓ Columna email ya existe');
   }
 
+  // Migración: columna nombre_completo
+  const [nombreCompletoCols] = await conn.query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
+    [dbName, 'usuarios', 'nombre_completo']
+  );
+  if (nombreCompletoCols.length === 0) {
+    await conn.query('ALTER TABLE usuarios ADD COLUMN nombre_completo VARCHAR(150) NULL AFTER nombre');
+    console.log('✅ Columna nombre_completo agregada a usuarios');
+  } else {
+    console.log('✓ Columna nombre_completo ya existe');
+  }
+
   // Migración: tabla password_reset_tokens
   const [resetTable] = await conn.query(
     `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,

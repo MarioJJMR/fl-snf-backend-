@@ -9,10 +9,10 @@ const login = async (req, res) => {
   try {
     const { usuario, contrasena } = req.body;
     if (!usuario || !contrasena)
-      return res.status(400).json({ success: false, error: 'Usuario y contraseña requeridos' });
+      return res.status(400).json({ success: false, error: 'Email y contraseña requeridos' });
 
     const [rows] = await pool.query(
-      'SELECT * FROM usuarios WHERE usuario = ? AND activo = 1',
+      'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
       [usuario]
     );
 

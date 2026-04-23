@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   contrasena      VARCHAR(100) NOT NULL,
   rol             ENUM('admin','usuario') DEFAULT 'usuario',
   nombre          VARCHAR(100),
+  nombre_completo VARCHAR(150),
+  email           VARCHAR(150) UNIQUE,
   activo          TINYINT(1) DEFAULT 1,
   fecha_registro  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
