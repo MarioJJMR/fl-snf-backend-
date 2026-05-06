@@ -1,11 +1,15 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend = null;
+function getResend() {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
+}
 
 async function sendMail({ to, cc, subject, html }) {
   console.log('[Mailer] Enviando correo a:', to, '| Asunto:', subject);
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: process.env.RESEND_FROM || 'Fundación Loyola <onboarding@resend.dev>',
       to,
       ...(cc ? { cc } : {}),
