@@ -1,4 +1,5 @@
 const { Resend } = require('resend');
+const logger = require('./logger');
 
 let resend = null;
 function getResend() {
@@ -7,7 +8,7 @@ function getResend() {
 }
 
 async function sendMail({ to, cc, subject, html }) {
-  console.log('[Mailer] Enviando correo a:', to, '| Asunto:', subject);
+  logger.info(`[Mailer] Enviando correo a: ${to} | Asunto: ${subject}`);
   try {
     const { data, error } = await getResend().emails.send({
       from: process.env.RESEND_FROM || 'Fundación Loyola <onboarding@resend.dev>',
@@ -17,10 +18,10 @@ async function sendMail({ to, cc, subject, html }) {
       html
     });
     if (error) throw error;
-    console.log('[Mailer] Correo enviado OK. Id:', data.id);
+    logger.info(`[Mailer] Correo enviado OK. Id: ${data.id}`);
     return data;
   } catch (err) {
-    console.error('[Mailer] Error al enviar correo:', err.message);
+    logger.error(`[Mailer] Error al enviar correo: ${err.message}`);
     throw err;
   }
 }

@@ -1,9 +1,10 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const logger = require('./logger');
 
 const rawUrl = process.env.MYSQL_PUBLIC_URL;
 if (!rawUrl) {
-  console.error('❌ MYSQL_PUBLIC_URL no está definida. Agrégala en Railway → backend service → Variables.');
+  logger.error('MYSQL_PUBLIC_URL no está definida. Agrégala en Railway → backend service → Variables.');
   process.exit(1);
 }
 
@@ -23,11 +24,11 @@ const pool = mysql.createPool({
 // Test connection on startup
 pool.getConnection()
   .then(conn => {
-    console.log('✅ MySQL conectado correctamente');
+    logger.info('MySQL conectado correctamente');
     conn.release();
   })
   .catch(err => {
-    console.error('❌ Error conectando a MySQL:', err.message);
+    logger.error(`Error conectando a MySQL: ${err.message}`);
   });
 
 module.exports = pool;

@@ -2,7 +2,9 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 const db = require('./helpers/db');
+const logger = require('./helpers/logger');
 
 const startTime = Date.now();
 
@@ -45,6 +47,9 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const morganStream = { write: (msg) => logger.http(msg.trim()) };
+app.use(morgan(':method :url :status :res[content-length]b - :response-time ms', { stream: morganStream }));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 
@@ -102,23 +107,23 @@ app.use((req, res) => {
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 
 app.use((err, req, res, next) => {
-  console.error('[Server] Unhandled error:', err);
-  res.status(500).json({
+  logger.error(`${req.method} ${req.originalUrl} — ${err.message}`, { stack: err.stack });
+  res.status(err.status || 500).json({
     success: false,
-    error: 'Error interno del servidor'
+    error: process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : err.message
   });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
-  console.log('=================================================');
-  console.log(`  FL-SNF Backend  |  Fundación Loyola`);
-  console.log('=================================================');
-  console.log(`  Ambiente : ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  Puerto   : ${PORT}`);
-  console.log(`  URL      : http://localhost:${PORT}`);
-  console.log('=================================================');
+  logger.info('=================================================');
+  logger.info('  FL-SNF Backend  |  Fundación Loyola');
+  logger.info('=================================================');
+  logger.info(`  Ambiente : ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`  Puerto   : ${PORT}`);
+  logger.info(`  URL      : http://localhost:${PORT}`);
+  logger.info('=================================================');
 });
 
 module.exports = app;
