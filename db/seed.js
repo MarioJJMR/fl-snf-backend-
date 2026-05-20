@@ -78,6 +78,8 @@ async function seed() {
       contrasena      VARCHAR(100) NOT NULL,
       rol             ENUM('admin','usuario') DEFAULT 'usuario',
       nombre          VARCHAR(100),
+      nombre_completo VARCHAR(150) DEFAULT NULL,
+      email           VARCHAR(150) DEFAULT NULL UNIQUE,
       obra_id         VARCHAR(36) DEFAULT NULL,
       activo          TINYINT(1) DEFAULT 1,
       fecha_registro  DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -145,6 +147,18 @@ async function seed() {
     )
   `);
 
+  // ── 7. password_reset_tokens ───────────────────────────────────────────────
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      token      VARCHAR(36) PRIMARY KEY,
+      user_id    VARCHAR(36) NOT NULL,
+      expira_en  DATETIME NOT NULL,
+      usado      TINYINT(1) DEFAULT 0,
+      INDEX idx_user (user_id),
+      INDEX idx_expira (expira_en)
+    )
+  `);
+
   // Reactivar FK checks
   await conn.query(`SET FOREIGN_KEY_CHECKS = 1`);
 
@@ -155,6 +169,16 @@ async function seed() {
   await safeAlter(conn,
     `ALTER TABLE usuarios ADD COLUMN obra_id VARCHAR(36) DEFAULT NULL AFTER nombre`,
     'obra_id ya existe en usuarios'
+  );
+
+  // Fix: email y nombre_completo en usuarios (instalaciones anteriores)
+  await safeAlter(conn,
+    `ALTER TABLE usuarios ADD COLUMN email VARCHAR(150) DEFAULT NULL UNIQUE AFTER nombre`,
+    'email ya existe en usuarios'
+  );
+  await safeAlter(conn,
+    `ALTER TABLE usuarios ADD COLUMN nombre_completo VARCHAR(150) DEFAULT NULL AFTER nombre`,
+    'nombre_completo ya existe en usuarios'
   );
 
   // Fix #5: tamano BIGINT en documentos
@@ -216,19 +240,23 @@ async function seed() {
   const obraHash  = await bcrypt.hash('5678', 10);
 
   const users = [
-    [uuidv4(), 'admin', adminHash, 'admin', 'Administrador'],
-    [uuidv4(), 'obra',  obraHash,  'usuario', 'Usuario Obra']
+    [uuidv4(), 'admin', adminHash, 'admin',   'Administrador', 'admin@fundacionloyola.org'],
+    [uuidv4(), 'obra',  obraHash,  'usuario', 'Usuario Obra',  'obra@fundacionloyola.org']
   ];
 
-  for (const [id, usuario, contrasena, rol, nombre] of users) {
+  for (const [id, usuario, contrasena, rol, nombre, email] of users) {
     await conn.query(
-      `INSERT IGNORE INTO usuarios (id, usuario, contrasena, rol, nombre) VALUES (?, ?, ?, ?, ?)`,
-      [id, usuario, contrasena, rol, nombre]
+      `INSERT IGNORE INTO usuarios (id, usuario, contrasena, rol, nombre, email) VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, usuario, contrasena, rol, nombre, email]
     );
   }
 
+  // Actualiza el email de usuarios existentes que no lo tengan (instalaciones previas)
+  await conn.query(`UPDATE usuarios SET email = 'admin@fundacionloyola.org' WHERE usuario = 'admin' AND email IS NULL`);
+  await conn.query(`UPDATE usuarios SET email = 'obra@fundacionloyola.org'  WHERE usuario = 'obra'  AND email IS NULL`);
+
   console.log('✅ Base de datos inicializada correctamente');
-  console.log('👤 Usuarios: admin/1234 y obra/5678');
+  console.log('👤 Usuarios: admin@fundacionloyola.org / 1234  y  obra@fundacionloyola.org / 5678');
   await conn.end();
 }
 
