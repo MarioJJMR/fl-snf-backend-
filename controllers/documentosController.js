@@ -87,7 +87,7 @@ const descargar = async (req, res, next) => {
       return res.status(403).json({ success: false, error: 'Sin permiso para descargar este documento' });
 
     const url = await documentosService.getPresignedDownloadUrl(doc.nombre_archivo, doc.nombre_original);
-    res.redirect(url);
+    res.json({ success: true, data: { url } });
   } catch (err) { next(err); }
 };
 
