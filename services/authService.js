@@ -24,13 +24,45 @@ async function findActiveUserByEmail(email) {
 }
 
 async function login(email, contrasena) {
-  const user = await findActiveUserByEmail(email);
-  if (!user) return null;
+  const logger = require('../helpers/logger');
+  logger.info(`[auth] login attempt for email: "${email}"`);
+
+  let user;
+  try {
+    user = await findActiveUserByEmail(email);
+  } catch (err) {
+    logger.error(`[auth] DB error in findActiveUserByEmail: ${err.message}`);
+    throw err;
+  }
+
+  if (!user) {
+    // Extra debug: check if user exists at all (wrong email or inactive)
+    try {
+      const [rows] = await pool.query(
+        'SELECT id, usuario, email, activo FROM usuarios WHERE email = ?',
+        [email]
+      );
+      if (rows.length === 0) {
+        logger.warn(`[auth] no user found with email="${email}"`);
+      } else {
+        logger.warn(`[auth] user found but activo=${rows[0].activo} for email="${email}"`);
+      }
+    } catch (err) {
+      logger.error(`[auth] DB error checking user existence: ${err.message}`);
+    }
+    return null;
+  }
+
+  logger.info(`[auth] user found: id=${user.id} usuario=${user.usuario} activo=${user.activo}`);
 
   const valid = await bcrypt.compare(contrasena, user.contrasena);
-  if (!valid) return null;
+  if (!valid) {
+    logger.warn(`[auth] password mismatch for email="${email}"`);
+    return null;
+  }
 
   const { token } = signToken(user);
+  logger.info(`[auth] login success for email="${email}"`);
   const { contrasena: _, ...userSafe } = user;
   return { token, user: userSafe };
 }

@@ -1,14 +1,19 @@
 const authService = require('../services/authService');
+const logger = require('../helpers/logger');
 
 const login = async (req, res, next) => {
   try {
     const { usuario, contrasena } = req.body;
+    logger.info(`[auth] POST /login — body keys: ${Object.keys(req.body).join(', ')} — usuario="${usuario}"`);
+
     if (!usuario || !contrasena)
       return res.status(400).json({ success: false, error: 'Email y contraseña requeridos' });
 
     const result = await authService.login(usuario, contrasena);
-    if (!result)
+    if (!result) {
+      logger.warn(`[auth] login failed for usuario="${usuario}" — returning 401`);
       return res.status(401).json({ success: false, error: 'Credenciales inválidas' });
+    }
 
     res.json({ success: true, data: result, message: 'Login exitoso' });
   } catch (err) { next(err); }

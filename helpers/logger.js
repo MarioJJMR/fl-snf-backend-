@@ -29,15 +29,13 @@ const logger = createLogger({
   ]
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new transports.Console({
-    format: combine(
-      colorize(),
-      timestamp({ format: 'HH:mm:ss' }),
-      errors({ stack: true }),
-      lineFormat
-    )
-  }));
-}
+// Always log to console so Railway captures output in production
+logger.add(new transports.Console({
+  format: combine(
+    timestamp({ format: 'HH:mm:ss' }),
+    errors({ stack: true }),
+    lineFormat
+  )
+}));
 
 module.exports = logger;
