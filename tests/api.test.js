@@ -1,4 +1,6 @@
 const request = require('supertest');
+const path = require('path');
+const fs = require('fs');
 const app = require('../server');
 const pool = require('../helpers/db');
 
@@ -7,6 +9,7 @@ let tokenAdmin = null;
 let tokenUsuario = null;
 let obraId = null;
 let usuarioCreado = null;
+let documentoId = null;
 
 // ─── Cierre de la pool al terminar ────────────────────────────────────────────
 afterAll(async () => {
@@ -309,6 +312,103 @@ describe('PUT /api/usuarios/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.nombre).toBe('Test Jest Actualizado');
+  });
+});
+
+// =============================================================================
+// DOCUMENTOS
+// =============================================================================
+describe('GET /api/documentos/:obraId', () => {
+  test('retorna 401 sin token', async () => {
+    const res = await request(app).get(`/api/documentos/${obraId}`);
+    expect(res.status).toBe(401);
+  });
+
+  test('retorna lista vacía o array para la obra', async () => {
+    const res = await request(app)
+      .get(`/api/documentos/${obraId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+});
+
+describe('POST /api/documentos/:obraId (upload a S3)', () => {
+  test('retorna 401 sin token', async () => {
+    const res = await request(app).post(`/api/documentos/${obraId}`);
+    expect(res.status).toBe(401);
+  });
+
+  test('retorna 400 sin archivos', async () => {
+    const res = await request(app)
+      .post(`/api/documentos/${obraId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('sube un PDF al bucket y guarda metadata en DB', async () => {
+    // Crea un PDF mínimo en memoria para la prueba
+    const pdfBuffer = Buffer.from('%PDF-1.4 test document');
+    const res = await request(app)
+      .post(`/api/documentos/${obraId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .attach('archivos', pdfBuffer, { filename: 'test_jest.pdf', contentType: 'application/pdf' });
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.data[0]).toHaveProperty('nombre_original', 'test_jest.pdf');
+    expect(res.body.data[0]).toHaveProperty('nombre_archivo');
+    documentoId = res.body.data[0].id;
+  });
+});
+
+describe('GET /api/documentos/:obraId/descargar/:id', () => {
+  test('retorna 401 sin token', async () => {
+    const res = await request(app).get(`/api/documentos/${obraId}/descargar/${documentoId}`);
+    expect(res.status).toBe(401);
+  });
+
+  test('redirige a URL firmada de S3', async () => {
+    const res = await request(app)
+      .get(`/api/documentos/${obraId}/descargar/${documentoId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .redirects(0); // no seguir el redirect
+    expect([301, 302, 303]).toContain(res.status);
+    expect(res.headers.location).toBeTruthy();
+  });
+
+  test('retorna 404 para documento inexistente', async () => {
+    const res = await request(app)
+      .get(`/api/documentos/${obraId}/descargar/999999`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+  });
+});
+
+describe('DELETE /api/documentos/:id', () => {
+  test('retorna 401 sin token', async () => {
+    const res = await request(app).delete(`/api/documentos/${documentoId}`);
+    expect(res.status).toBe(401);
+  });
+
+  test('elimina el documento del bucket y la DB', async () => {
+    const res = await request(app)
+      .delete(`/api/documentos/${documentoId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('retorna 404 al intentar eliminar el mismo documento de nuevo', async () => {
+    const res = await request(app)
+      .delete(`/api/documentos/${documentoId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
   });
 });
 

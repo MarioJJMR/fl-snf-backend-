@@ -14,11 +14,12 @@ const pool = mysql.createPool({
   port:               Number(u.port) || 3306,
   user:               decodeURIComponent(u.username),
   password:           decodeURIComponent(u.password),
-  database:           'fl_snf_db',
+  database:           u.pathname.replace('/', '') || 'fl_snf_db',
   waitForConnections: true,
   connectionLimit:    10,
   queueLimit:         0,
-  timezone:           '+00:00'
+  timezone:           '+00:00',
+  ssl:                { rejectUnauthorized: false }
 });
 
 // Test connection on startup

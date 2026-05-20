@@ -7,7 +7,7 @@ const s3 = new S3Client({
     accessKeyId: process.env.BUCKET_ACCESS_KEY_ID,
     secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY,
   },
-  forcePathStyle: false,
+  forcePathStyle: true,
 });
 
 const BUCKET_NAME = process.env.BUCKET_NAME;

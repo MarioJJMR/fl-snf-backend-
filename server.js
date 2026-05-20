@@ -116,14 +116,16 @@ app.use((err, req, res, next) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  logger.info('=================================================');
-  logger.info('  FL-SNF Backend  |  Fundación Loyola');
-  logger.info('=================================================');
-  logger.info(`  Ambiente : ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`  Puerto   : ${PORT}`);
-  logger.info(`  URL      : http://localhost:${PORT}`);
-  logger.info('=================================================');
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info('=================================================');
+    logger.info('  FL-SNF Backend  |  Fundación Loyola');
+    logger.info('=================================================');
+    logger.info(`  Ambiente : ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`  Puerto   : ${PORT}`);
+    logger.info(`  URL      : http://localhost:${PORT}`);
+    logger.info('=================================================');
+  });
+}
 
 module.exports = app;
