@@ -115,3 +115,93 @@ DB_PORT
 RESEND_API_KEY       # Required for password reset and sondeo emails
 RESEND_FROM          # Optional — defaults to onboarding@resend.dev
 ```
+
+---
+
+## S3 Document Storage
+
+### Overview
+
+Replaced local disk storage with **AWS S3 presigned URLs** for document upload and download. Files are uploaded directly from the client to S3; the backend only manages metadata and generates signed URLs.
+
+### Upload Flow
+
+```
+Client → POST /documentos/presigned-upload  → Backend issues PUT presigned URL
+Client → PUT <presigned URL>                → Client uploads file directly to S3
+Client → POST /documentos/confirm-upload    → Backend registers metadata in DB
+```
+
+### Download Flow
+
+```
+Client → GET /documentos/:id/descargar → Backend returns { success: true, data: { url } }
+Client opens/fetches the presigned URL  → File downloaded directly from S3
+```
+
+### New Files
+
+| File | Responsibility |
+|---|---|
+| `helpers/s3.js` | AWS S3 client instance and `BUCKET_NAME` export |
+
+### Changed Behavior
+
+- `multer` switched to `memoryStorage` — files are no longer written to disk.
+- `GET /documentos/:id/descargar` now returns a JSON payload with the presigned download URL instead of issuing a server-side redirect.
+- Allowed MIME types are exported from `helpers/upload.js` for reuse.
+
+### New Environment Variables Required
+
+```
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+S3_BUCKET_NAME
+```
+
+---
+
+## Database Schema — Users & Password Reset
+
+### Overview
+
+Extended the `usuarios` table and added a `password_reset_tokens` table to support email-based login and password reset flows.
+
+### Schema Changes
+
+| Table | Change |
+|---|---|
+| `usuarios` | Added `nombre_completo` (VARCHAR) and `email` (VARCHAR, UNIQUE) columns |
+| `password_reset_tokens` | New table — stores single-use reset tokens per user |
+
+### Seed Updates
+
+- Default users now include `email` values.
+- `safeAlter` fallbacks ensure the new columns are added on existing installations without breaking the schema migration.
+- Seed console output now shows email-based credentials instead of usernames.
+
+---
+
+## Auth Logging
+
+### Overview
+
+Added verbose authentication logging to improve observability in production environments (e.g. Railway).
+
+### What Gets Logged
+
+| Event | Level |
+|---|---|
+| Incoming login request (body keys) | `info` |
+| Login attempt (email) | `info` |
+| DB error during login | `error` |
+| User not found | `warn` |
+| Inactive user found | `warn` |
+| Password mismatch | `warn` |
+| Successful login | `info` |
+| Failed login (401 returned) | `warn` |
+
+### Logger Change
+
+`helpers/logger.js` always adds a `Console` transport regardless of environment, so platform log aggregators (e.g. Railway, Render) capture output without relying on file-based logs.
