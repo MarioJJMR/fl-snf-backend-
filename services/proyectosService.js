@@ -4,7 +4,7 @@ const TIPOS_VALIDOS = ['vigente', 'financiar'];
 
 async function getAll(obraId) {
   const [rows] = await pool.query(
-    `SELECT id, tipo, datos, creado_por, actualizado_por, fecha_registro, fecha_actualizacion
+    `SELECT id, tipo, status, datos, creado_por, actualizado_por, fecha_registro, fecha_actualizacion
      FROM proyectos WHERE obra_id = ? ORDER BY tipo, id`,
     [obraId]
   );
@@ -13,7 +13,7 @@ async function getAll(obraId) {
 
 async function getByTipo(obraId, tipo) {
   const [rows] = await pool.query(
-    `SELECT id, tipo, datos, creado_por, actualizado_por, fecha_registro, fecha_actualizacion
+    `SELECT id, tipo, status, datos, creado_por, actualizado_por, fecha_registro, fecha_actualizacion
      FROM proyectos WHERE obra_id = ? AND tipo = ? ORDER BY id`,
     [obraId, tipo]
   );
@@ -45,4 +45,13 @@ async function remove(id) {
   await pool.query('DELETE FROM proyectos WHERE id = ?', [id]);
 }
 
-module.exports = { TIPOS_VALIDOS, getAll, getByTipo, getById, create, update, remove };
+const STATUS_VALIDOS = ['nuevo', 'aprobado', 'rechazado', 'cerrado'];
+
+async function updateStatus(id, { status, userId }) {
+  await pool.query(
+    'UPDATE proyectos SET status = ?, actualizado_por = ? WHERE id = ?',
+    [status, userId, id]
+  );
+}
+
+module.exports = { TIPOS_VALIDOS, STATUS_VALIDOS, getAll, getByTipo, getById, create, update, updateStatus, remove };

@@ -80,6 +80,33 @@ async function migrate() {
     console.log('✓ Tabla password_reset_tokens ya existe');
   }
 
+  // Migración: tabla proyectos
+  const [proyectosTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'proyectos']
+  );
+  if (proyectosTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE proyectos (
+        id                  INT AUTO_INCREMENT PRIMARY KEY,
+        obra_id             VARCHAR(36) NOT NULL,
+        tipo                ENUM('vigente', 'financiar') NOT NULL,
+        datos               JSON NOT NULL,
+        creado_por          VARCHAR(36),
+        actualizado_por     VARCHAR(36),
+        fecha_registro      DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_actualizacion DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_obra_tipo (obra_id, tipo),
+        FOREIGN KEY (obra_id) REFERENCES obras(id) ON DELETE CASCADE,
+        FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+        FOREIGN KEY (actualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+      )
+    `);
+    console.log('✅ Tabla proyectos creada');
+  } else {
+    console.log('✓ Tabla proyectos ya existe');
+  }
+
   await conn.end();
   console.log('Migración completa');
 }

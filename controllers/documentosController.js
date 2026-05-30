@@ -1,8 +1,9 @@
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { s3, BUCKET_NAME } = require('../helpers/s3');
-const { ALLOWED_MIME } = require('../helpers/upload');
+const { ALLOWED_MIME, CATEGORIAS_VALIDAS } = require('../helpers/upload');
 const documentosService = require('../services/documentosService');
+const logger = require('../helpers/logger');
 
 const getAll = async (req, res, next) => {
   try {
@@ -13,11 +14,19 @@ const getAll = async (req, res, next) => {
 
 const upload = async (req, res, next) => {
   try {
+    logger.info(`[documentos] POST upload — obraId=${req.params.obraId} user=${req.user?.id} files=${req.files?.length ?? 0} bucket=${BUCKET_NAME}`);
     if (!req.files || req.files.length === 0)
       return res.status(400).json({ success: false, error: 'No se recibió ningún archivo' });
-    const data = await documentosService.insertMany(req.params.obraId, req.files, req.user.id);
+
+    const categoria = CATEGORIAS_VALIDAS.has(req.body.categoria) ? req.body.categoria : 'general';
+    logger.info(`[documentos] files: ${req.files.map(f => `${f.originalname}(${f.mimetype},${f.size}b)`).join(', ')} categoria=${categoria}`);
+    const data = await documentosService.insertMany(req.params.obraId, req.files, req.user.id, categoria);
+    logger.info(`[documentos] upload success — ${data.length} archivo(s) guardados`);
     res.status(201).json({ success: true, data, message: `${data.length} archivo(s) subido(s)` });
-  } catch (err) { next(err); }
+  } catch (err) {
+    logger.error(`[documentos] upload error — ${err.message}`);
+    next(err);
+  }
 };
 
 // Returns a presigned PUT URL so the frontend can upload directly to the bucket
@@ -57,6 +66,7 @@ const presignedUpload = async (req, res, next) => {
 const confirmUpload = async (req, res, next) => {
   try {
     const { key, filename, mimetype, tamano } = req.body;
+    const categoria = CATEGORIAS_VALIDAS.has(req.body.categoria) ? req.body.categoria : 'general';
 
     if (!key || !filename || !mimetype)
       return res.status(400).json({ success: false, error: 'key, filename y mimetype son requeridos' });
@@ -64,15 +74,15 @@ const confirmUpload = async (req, res, next) => {
     if (!key.startsWith('documentos/'))
       return res.status(400).json({ success: false, error: 'key inválido' });
 
-    const values = [[req.params.obraId, filename, key, mimetype, tamano || 0, req.user.id]];
+    const values = [[req.params.obraId, filename, key, categoria, mimetype, tamano || 0, req.user.id]];
     const [result] = await require('../helpers/db').query(
-      `INSERT INTO documentos (obra_id, nombre_original, nombre_archivo, mime_type, tamano, subido_por) VALUES ?`,
+      `INSERT INTO documentos (obra_id, nombre_original, nombre_archivo, categoria, mime_type, tamano, subido_por) VALUES ?`,
       [values]
     );
 
     res.status(201).json({
       success: true,
-      data: { id: result.insertId, nombre_original: filename, nombre_archivo: key, mime_type: mimetype, tamano: tamano || 0 },
+      data: { id: result.insertId, nombre_original: filename, nombre_archivo: key, categoria, mime_type: mimetype, tamano: tamano || 0 },
       message: 'Documento registrado'
     });
   } catch (err) { next(err); }

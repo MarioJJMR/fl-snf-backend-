@@ -48,6 +48,24 @@ const update = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const updateStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status || !proyectosService.STATUS_VALIDOS.includes(status))
+      return res.status(400).json({ success: false, error: `Status inválido. Use: ${proyectosService.STATUS_VALIDOS.join(', ')}` });
+
+    const proyecto = await proyectosService.getById(id);
+    if (!proyecto) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+
+    if (req.user.rol !== 'admin' && proyecto.obra_id !== req.user.obra_id)
+      return res.status(403).json({ success: false, error: 'Sin permiso para modificar este proyecto' });
+
+    await proyectosService.updateStatus(id, { status, userId: req.user.id });
+    res.json({ success: true, message: `Status actualizado a "${status}"` });
+  } catch (err) { next(err); }
+};
+
 const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -62,4 +80,4 @@ const remove = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getAll, getByTipo, create, update, remove };
+module.exports = { getAll, getByTipo, create, update, updateStatus, remove };
