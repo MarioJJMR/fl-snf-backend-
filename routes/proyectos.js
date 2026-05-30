@@ -15,6 +15,9 @@ router.post('/:obraId/:tipo', verifyToken, proyectosController.create);
 // PUT /api/proyectos/:id
 router.put('/:id', verifyToken, proyectosController.update);
 
+// PATCH /api/proyectos/:id/status
+router.patch('/:id/status', verifyToken, proyectosController.updateStatus);
+
 // DELETE /api/proyectos/:id
 router.delete('/:id', verifyToken, proyectosController.remove);
 

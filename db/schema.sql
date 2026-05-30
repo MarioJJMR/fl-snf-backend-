@@ -46,6 +46,22 @@ CREATE TABLE IF NOT EXISTS formularios (
   FOREIGN KEY (actualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+-- Tabla de proyectos (vigentes y por financiar) por obra
+CREATE TABLE IF NOT EXISTS proyectos (
+  id                  INT AUTO_INCREMENT PRIMARY KEY,
+  obra_id             VARCHAR(36) NOT NULL,
+  tipo                ENUM('vigente', 'financiar') NOT NULL,
+  datos               JSON NOT NULL,
+  creado_por          VARCHAR(36),
+  actualizado_por     VARCHAR(36),
+  fecha_registro      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_obra_tipo (obra_id, tipo),
+  FOREIGN KEY (obra_id) REFERENCES obras(id) ON DELETE CASCADE,
+  FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  FOREIGN KEY (actualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
 -- Datos iniciales: usuarios por defecto
 -- NOTA: Los hashes de bcrypt a continuación son de referencia y pueden no ser válidos.
 -- Ejecuta `node db/seed.js` para generar hashes válidos e insertar usuarios correctamente.

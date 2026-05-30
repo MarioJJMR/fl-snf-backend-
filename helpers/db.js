@@ -2,24 +2,39 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 const logger = require('./logger');
 
-const rawUrl = process.env.MYSQL_PUBLIC_URL;
-if (!rawUrl) {
-  logger.error('MYSQL_PUBLIC_URL no está definida. Agrégala en Railway → backend service → Variables.');
-  process.exit(1);
+let poolConfig;
+
+if (process.env.NODE_ENV === 'development') {
+  poolConfig = {
+    host:     process.env.DB_HOST || 'localhost',
+    port:     Number(process.env.DB_PORT) || 3306,
+    user:     process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'fl_snf_db',
+  };
+} else {
+  const rawUrl = process.env.MYSQL_PUBLIC_URL;
+  if (!rawUrl) {
+    logger.error('MYSQL_PUBLIC_URL no está definida. Agrégala en Railway → backend service → Variables.');
+    process.exit(1);
+  }
+  const u = new URL(rawUrl);
+  poolConfig = {
+    host:     u.hostname,
+    port:     Number(u.port) || 3306,
+    user:     decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    database: u.pathname.replace('/', '') || 'fl_snf_db',
+    ssl:      { rejectUnauthorized: false },
+  };
 }
 
-const u = new URL(rawUrl);
 const pool = mysql.createPool({
-  host:               u.hostname,
-  port:               Number(u.port) || 3306,
-  user:               decodeURIComponent(u.username),
-  password:           decodeURIComponent(u.password),
-  database:           u.pathname.replace('/', '') || 'fl_snf_db',
+  ...poolConfig,
   waitForConnections: true,
   connectionLimit:    10,
   queueLimit:         0,
   timezone:           '+00:00',
-  ssl:                { rejectUnauthorized: false }
 });
 
 // Test connection on startup

@@ -5,8 +5,8 @@ const { s3, BUCKET_NAME } = require('../helpers/s3');
 
 async function getAll(obraId) {
   const [rows] = await pool.query(
-    `SELECT id, nombre_original, nombre_archivo, mime_type, tamano, subido_por, fecha_subida
-     FROM documentos WHERE obra_id = ? ORDER BY fecha_subida DESC`,
+    `SELECT id, nombre_original, nombre_archivo, categoria, mime_type, tamano, subido_por, fecha_subida
+     FROM documentos WHERE obra_id = ? ORDER BY categoria, fecha_subida DESC`,
     [obraId]
   );
   return rows;
@@ -14,7 +14,7 @@ async function getAll(obraId) {
 
 async function getById(id) {
   const [rows] = await pool.query(
-    'SELECT nombre_original, nombre_archivo, mime_type, obra_id, subido_por FROM documentos WHERE id = ?',
+    'SELECT nombre_original, nombre_archivo, mime_type, categoria, obra_id, subido_por FROM documentos WHERE id = ?',
     [id]
   );
   return rows[0] || null;
@@ -29,13 +29,13 @@ async function uploadToS3(key, buffer, mimetype) {
   }));
 }
 
-async function insertMany(obraId, files, userId) {
+async function insertMany(obraId, files, userId, categoria = 'general') {
   const uploaded = [];
 
   for (const f of files) {
     const ts = Date.now();
     const safe = f.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const key = `documentos/${ts}_${safe}`;
+    const key = `documentos/${categoria}/${ts}_${safe}`;
 
     await uploadToS3(key, f.buffer, f.mimetype);
 
@@ -43,11 +43,11 @@ async function insertMany(obraId, files, userId) {
   }
 
   const values = uploaded.map(({ key, file }) => [
-    obraId, file.originalname, key, file.mimetype, file.size, userId
+    obraId, file.originalname, key, categoria, file.mimetype, file.size, userId
   ]);
 
   const [result] = await pool.query(
-    `INSERT INTO documentos (obra_id, nombre_original, nombre_archivo, mime_type, tamano, subido_por) VALUES ?`,
+    `INSERT INTO documentos (obra_id, nombre_original, nombre_archivo, categoria, mime_type, tamano, subido_por) VALUES ?`,
     [values]
   );
 
@@ -55,6 +55,7 @@ async function insertMany(obraId, files, userId) {
     id: result.insertId + i,
     nombre_original: file.originalname,
     nombre_archivo: key,
+    categoria,
     mime_type: file.mimetype,
     tamano: file.size
   }));
