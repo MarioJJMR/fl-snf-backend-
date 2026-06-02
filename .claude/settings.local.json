@@ -5,7 +5,8 @@
       "Bash(timeout 10 npm start:*)",
       "Bash(timeout 8 npm start:*)",
       "Bash(npm install:*)",
-      "WebFetch(domain:docs.railway.com)"
+      "WebFetch(domain:docs.railway.com)",
+      "Bash(MYSQL_PUBLIC_URL= node:*)"
     ]
   }
 }

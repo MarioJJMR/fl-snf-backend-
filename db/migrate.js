@@ -10,7 +10,8 @@ async function migrate() {
       port:     Number(u.port) || 3306,
       user:     decodeURIComponent(u.username),
       password: decodeURIComponent(u.password),
-      database: u.pathname.replace('/', '')
+      database: u.pathname.replace('/', ''),
+      ssl:      { rejectUnauthorized: false },
     };
   } else {
     connConfig = {
@@ -105,6 +106,47 @@ async function migrate() {
     console.log('✅ Tabla proyectos creada');
   } else {
     console.log('✓ Tabla proyectos ya existe');
+  }
+
+  // Migración: columna categoria en documentos
+  const [categoriaCols] = await conn.query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
+    [dbName, 'documentos', 'categoria']
+  );
+  if (categoriaCols.length === 0) {
+    await conn.query(
+      `ALTER TABLE documentos ADD COLUMN categoria VARCHAR(100) NOT NULL DEFAULT 'general' AFTER nombre_archivo`
+    );
+    console.log('✅ Columna categoria agregada a documentos');
+  } else {
+    console.log('✓ Columna categoria ya existe en documentos');
+  }
+
+  // Migración: tabla documentos
+  const [documentosTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'documentos']
+  );
+  if (documentosTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE documentos (
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        obra_id          VARCHAR(36) NOT NULL,
+        nombre_original  VARCHAR(255) NOT NULL,
+        nombre_archivo   VARCHAR(500) NOT NULL,
+        categoria        VARCHAR(100) NOT NULL DEFAULT 'general',
+        mime_type        VARCHAR(100),
+        tamano           BIGINT,
+        subido_por       VARCHAR(36),
+        fecha_subida     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_obra (obra_id),
+        FOREIGN KEY (obra_id) REFERENCES obras(id) ON DELETE CASCADE,
+        FOREIGN KEY (subido_por) REFERENCES usuarios(id) ON DELETE SET NULL
+      )
+    `);
+    console.log('✅ Tabla documentos creada');
+  } else {
+    console.log('✓ Tabla documentos ya existe');
   }
 
   await conn.end();

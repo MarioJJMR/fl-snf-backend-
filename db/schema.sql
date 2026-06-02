@@ -62,6 +62,22 @@ CREATE TABLE IF NOT EXISTS proyectos (
   FOREIGN KEY (actualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+-- Tabla de documentos (archivos S3 por obra)
+CREATE TABLE IF NOT EXISTS documentos (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  obra_id          VARCHAR(36) NOT NULL,
+  nombre_original  VARCHAR(255) NOT NULL,
+  nombre_archivo   VARCHAR(500) NOT NULL,
+  categoria        VARCHAR(100) NOT NULL DEFAULT 'general',
+  mime_type        VARCHAR(100),
+  tamano           BIGINT,
+  subido_por       VARCHAR(36),
+  fecha_subida     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_obra (obra_id),
+  FOREIGN KEY (obra_id) REFERENCES obras(id) ON DELETE CASCADE,
+  FOREIGN KEY (subido_por) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
 -- Datos iniciales: usuarios por defecto
 -- NOTA: Los hashes de bcrypt a continuación son de referencia y pueden no ser válidos.
 -- Ejecuta `node db/seed.js` para generar hashes válidos e insertar usuarios correctamente.
