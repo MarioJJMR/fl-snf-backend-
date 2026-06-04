@@ -5,6 +5,15 @@ const pool = require('../helpers/db');
 const { verifyGoogleToken } = require('../middleware/googleAuth');
 const { sendMail } = require('../helpers/mailer');
 
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function signToken(user) {
   const jti = uuidv4();
   const token = jwt.sign(
@@ -119,6 +128,7 @@ async function forgotPassword(email) {
 
   const frontendUrl = process.env.FRONTEND_URL || 'https://fl-snf-frontend-production.up.railway.app';
   const resetLink = `${frontendUrl}/reset-password.html?token=${token}`;
+  const displayName = escapeHtml(user.nombre || user.usuario);
 
   await sendMail({
     to: email,
@@ -130,7 +140,7 @@ async function forgotPassword(email) {
           <p style="color:rgba(255,255,255,0.75);margin:6px 0 0;font-size:13px">Sistema FL-SNF · Fundación Loyola</p>
         </div>
         <div style="background:#fff;padding:28px 32px;border:1px solid #e0e8f4;border-top:none">
-          <p style="font-size:15px">Hola <strong>${user.nombre || user.usuario}</strong>,</p>
+          <p style="font-size:15px">Hola <strong>${displayName}</strong>,</p>
           <p style="font-size:14px;color:#4a5568">Recibimos una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar.</p>
           <div style="text-align:center;margin:28px 0">
             <a href="${resetLink}"

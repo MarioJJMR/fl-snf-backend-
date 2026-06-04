@@ -2,7 +2,9 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const db = require('./helpers/db');
 const logger = require('./helpers/logger');
 
@@ -19,13 +21,20 @@ const correoRoutes = require('./routes/correo');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ─── Security Headers (Helmet) ────────────────────────────────────────────────
+
+app.use(helmet());
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
+// Dominios permitidos: FRONTEND_URL en producción + localhost en desarrollo.
+// NO usar wildcards de plataforma (*.railway.app, *.netlify.app) — cualquier
+// app de terceros en esas plataformas podría hacer requests credenciados.
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
-  /^https:\/\/.*\.up\.railway\.app$/,
-  /^https:\/\/.*\.netlify\.app$/,
+  ...(process.env.NODE_ENV !== 'production'
+    ? [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/]
+    : []),
 ].filter(Boolean);
 
 const corsOptions = {
@@ -50,6 +59,35 @@ app.use(express.urlencoded({ extended: true }));
 
 const morganStream = { write: (msg) => logger.http(msg.trim()) };
 app.use(morgan(':method :url :status :res[content-length]b - :response-time ms', { stream: morganStream }));
+
+// ─── Rate Limiters ────────────────────────────────────────────────────────────
+
+// Login: 10 intentos por IP cada 15 minutos (bloquea fuerza bruta)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' }
+});
+
+// Forgot-password: 5 solicitudes por IP cada hora (evita spam de correos)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiadas solicitudes de recuperación. Intenta de nuevo en una hora.' }
+});
+
+// Correo/sondeo: 10 correos por IP cada hora
+const correoLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiados correos enviados. Intenta de nuevo en una hora.' }
+});
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 
@@ -78,7 +116,8 @@ app.get('/api/health', async (req, res) => {
       uptime: `${Math.floor(uptimeSec / 3600)}h ${Math.floor((uptimeSec % 3600) / 60)}m ${uptimeSec % 60}s`,
       timestamp: new Date().toISOString(),
       services: {
-        database: { status: dbStatus, ...(dbError && { error: dbError }) }
+        // No exponer el mensaje de error de BD en producción
+        database: { status: dbStatus, ...(dbError && process.env.NODE_ENV !== 'production' && { error: dbError }) }
       }
     },
     message: healthy ? 'FL-SNF Backend is running' : 'Backend degradado - revisa los servicios'
@@ -86,6 +125,10 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+app.use('/api/correo', correoLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/obras', obrasRoutes);

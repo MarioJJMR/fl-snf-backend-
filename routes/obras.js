@@ -12,8 +12,8 @@ router.get('/:id', verifyToken, obrasController.getById);
 // POST /api/obras  (admin only)
 router.post('/', verifyToken, requireRole('admin'), obrasController.create);
 
-// PUT /api/obras/:id
-router.put('/:id', verifyToken, obrasController.update);
+// PUT /api/obras/:id  (admin only)
+router.put('/:id', verifyToken, requireRole('admin'), obrasController.update);
 
 // DELETE /api/obras/:id  (admin only)
 router.delete('/:id', verifyToken, requireRole('admin'), obrasController.remove);

@@ -25,7 +25,9 @@ if (process.env.NODE_ENV === 'development') {
     user:     decodeURIComponent(u.username),
     password: decodeURIComponent(u.password),
     database: u.pathname.replace('/', '') || 'fl_snf_db',
-    ssl:      { rejectUnauthorized: false },
+    // DB_SSL_REJECT_UNAUTHORIZED=false solo si el proveedor usa cert autofirmado
+    // y no hay forma de proveer el CA. Por defecto: true (seguro).
+    ssl:      { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' },
   };
 }
 
