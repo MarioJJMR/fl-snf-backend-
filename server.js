@@ -21,6 +21,10 @@ const correoRoutes = require('./routes/correo');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Railway (and most PaaS) sit behind a reverse proxy that sets X-Forwarded-For.
+// This tells Express/express-rate-limit to trust the first hop proxy.
+app.set('trust proxy', 1);
+
 // ─── Security Headers (Helmet) ────────────────────────────────────────────────
 
 app.use(helmet());
@@ -28,14 +32,17 @@ app.use(helmet());
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 // Dominios permitidos: FRONTEND_URL en producción + localhost en desarrollo.
-// NO usar wildcards de plataforma (*.railway.app, *.netlify.app) — cualquier
-// app de terceros en esas plataformas podría hacer requests credenciados.
+// EXTRA_ORIGINS: lista separada por comas para dominios adicionales (ej. staging).
+// NO usar wildcards de plataforma (*.railway.app, *.netlify.app).
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  ...(process.env.EXTRA_ORIGINS ? process.env.EXTRA_ORIGINS.split(',').map(s => s.trim()) : []),
   ...(process.env.NODE_ENV !== 'production'
     ? [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/]
     : []),
 ].filter(Boolean);
+
+logger.info(`[CORS] Orígenes permitidos: ${allowedOrigins.map(o => o.toString()).join(', ') || '(ninguno)'}`);
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -43,6 +50,7 @@ const corsOptions = {
     const allowed = allowedOrigins.some(o =>
       o instanceof RegExp ? o.test(origin) : o === origin
     );
+    if (!allowed) logger.warn(`[CORS] Origen bloqueado: "${origin}" — agrega a FRONTEND_URL o EXTRA_ORIGINS`);
     callback(allowed ? null : new Error('CORS: origen no permitido'), allowed);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
