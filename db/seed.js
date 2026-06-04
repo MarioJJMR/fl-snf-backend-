@@ -109,6 +109,7 @@ async function seed() {
       id                  INT AUTO_INCREMENT PRIMARY KEY,
       obra_id             VARCHAR(36) NOT NULL,
       tipo                ENUM('vigente','financiar') NOT NULL,
+      status              ENUM('nuevo','aprobado','rechazado','cerrado') DEFAULT 'nuevo',
       datos               JSON NOT NULL,
       creado_por          VARCHAR(36),
       actualizado_por     VARCHAR(36),
@@ -179,6 +180,12 @@ async function seed() {
   await safeAlter(conn,
     `ALTER TABLE usuarios ADD COLUMN nombre_completo VARCHAR(150) DEFAULT NULL AFTER nombre`,
     'nombre_completo ya existe en usuarios'
+  );
+
+  // Fix: status en proyectos (instalaciones anteriores sin la columna)
+  await safeAlter(conn,
+    `ALTER TABLE proyectos ADD COLUMN status ENUM('nuevo','aprobado','rechazado','cerrado') DEFAULT 'nuevo' AFTER tipo`,
+    'status ya existe en proyectos'
   );
 
   // Fix #5: tamano BIGINT en documentos
@@ -254,6 +261,45 @@ async function seed() {
   // Actualiza el email de usuarios existentes que no lo tengan (instalaciones previas)
   await conn.query(`UPDATE usuarios SET email = 'admin@fundacionloyola.org' WHERE usuario = 'admin' AND email IS NULL`);
   await conn.query(`UPDATE usuarios SET email = 'obra@fundacionloyola.org'  WHERE usuario = 'obra'  AND email IS NULL`);
+
+  // ── Seed obra de ejemplo ───────────────────────────────────────────────────
+  const obraId = uuidv4();
+  await conn.query(
+    `INSERT IGNORE INTO obras (id, nombre_obra, estado, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?, ?)`,
+    [obraId, 'Obra Ejemplo — Casa de la Juventud', 'Jalisco', 'Av. Loyola 123, Guadalajara', '3312345678', 'ejemplo@obra.mx']
+  );
+
+  // Asignar obra al usuario 'obra' si aún no tiene una asignada
+  await conn.query(
+    `UPDATE usuarios SET obra_id = ? WHERE usuario = 'obra' AND obra_id IS NULL`,
+    [obraId]
+  );
+
+  // ── Seed proyectos de ejemplo ──────────────────────────────────────────────
+  const proyectosSeed = [
+    { tipo: 'vigente',  status: 'aprobado', datos: { nombre: 'Programa de Becas Secundaria 2026', descripcion: 'Apoyo económico a estudiantes en situación de vulnerabilidad', monto_solicitado: 150000, beneficiarios: 45 } },
+    { tipo: 'vigente',  status: 'nuevo',    datos: { nombre: 'Taller de Oficios para Jóvenes', descripcion: 'Capacitación en carpintería, electricidad y plomería', monto_solicitado: 80000, beneficiarios: 30 } },
+    { tipo: 'financiar', status: 'nuevo',   datos: { nombre: 'Construcción Aula Comunitaria', descripcion: 'Nuevo espacio para actividades educativas y culturales', monto_solicitado: 350000, beneficiarios: 120 } },
+    { tipo: 'financiar', status: 'rechazado', datos: { nombre: 'Equipo de Cómputo para Biblioteca', descripcion: 'Adquisición de 20 computadoras para sala de cómputo', monto_solicitado: 200000, beneficiarios: 200 } },
+  ];
+
+  // Obtener el id del usuario admin para creado_por
+  const [[adminUser]] = await conn.query(`SELECT id FROM usuarios WHERE usuario = 'admin' LIMIT 1`);
+  const adminUserId = adminUser?.id || null;
+
+  for (const p of proyectosSeed) {
+    // Solo insertar si no existe ya un proyecto con ese nombre en esa obra
+    const [[existing]] = await conn.query(
+      `SELECT id FROM proyectos WHERE obra_id = ? AND JSON_EXTRACT(datos, '$.nombre') = ? LIMIT 1`,
+      [obraId, p.datos.nombre]
+    );
+    if (!existing) {
+      await conn.query(
+        `INSERT INTO proyectos (obra_id, tipo, status, datos, creado_por, actualizado_por) VALUES (?, ?, ?, ?, ?, ?)`,
+        [obraId, p.tipo, p.status, JSON.stringify(p.datos), adminUserId, adminUserId]
+      );
+    }
+  }
 
   console.log('✅ Base de datos inicializada correctamente');
   console.log('👤 Usuarios: admin@fundacionloyola.org / 1234  y  obra@fundacionloyola.org / 5678');
