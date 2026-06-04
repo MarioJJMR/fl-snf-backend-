@@ -53,7 +53,7 @@ const corsOptions = {
     if (!allowed) logger.warn(`[CORS] Origen bloqueado: "${origin}" — agrega a FRONTEND_URL o EXTRA_ORIGINS`);
     callback(allowed ? null : new Error('CORS: origen no permitido'), allowed);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
