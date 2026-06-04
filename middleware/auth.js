@@ -37,8 +37,12 @@ async function verifyToken(req, res, next) {
       if (rows.length > 0) {
         return res.status(401).json({ success: false, error: 'La sesión ha sido cerrada. Inicia sesión nuevamente.' });
       }
-    } catch (_) {
-      // Si la tabla no existe aún (primera ejecución antes del seed), dejar pasar
+    } catch (err) {
+      // Solo dejar pasar si la tabla todavía no existe (ER_NO_SUCH_TABLE = 1146).
+      // Cualquier otro error de BD rechaza el token para evitar bypass de revocación.
+      if (err.errno !== 1146) {
+        return res.status(503).json({ success: false, error: 'Error de autenticación. Intenta de nuevo.' });
+      }
     }
   }
 
@@ -62,4 +66,27 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { verifyToken, requireRole };
+/**
+ * Verifica que el usuario tenga acceso a la obra indicada en req.params.
+ * Los admins tienen acceso a todas las obras.
+ * Los usuarios regulares solo pueden acceder a su obra asignada.
+ * Debe usarse después de verifyToken.
+ *
+ * @param {string} paramName - nombre del param de ruta que contiene el obraId (default: 'obraId')
+ */
+function requireObraAccess(paramName = 'obraId') {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'No autenticado' });
+    }
+    if (req.user.rol === 'admin') return next();
+
+    const obraId = req.params[paramName];
+    if (String(req.user.obra_id) !== String(obraId)) {
+      return res.status(403).json({ success: false, error: 'Sin permiso para acceder a esta obra' });
+    }
+    next();
+  };
+}
+
+module.exports = { verifyToken, requireRole, requireObraAccess };
