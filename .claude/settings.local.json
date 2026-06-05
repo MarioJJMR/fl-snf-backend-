@@ -6,7 +6,16 @@
       "Bash(timeout 8 npm start:*)",
       "Bash(npm install:*)",
       "WebFetch(domain:docs.railway.com)",
-      "Bash(MYSQL_PUBLIC_URL= node:*)"
+      "Bash(MYSQL_PUBLIC_URL= node:*)",
+      "Bash(npx:*)",
+      "Bash(mysql:*)",
+      "Bash(where mysql:*)",
+      "Bash(sc query:*)",
+      "Read(//c/Program Files/MySQL/**)",
+      "Read(//c/Program Files/MySQL/MySQL Server 9.6/bin/**)",
+      "Bash(\"C:/Program Files/MySQL/MySQL Server 9.6/bin/mysql\":*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

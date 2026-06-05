@@ -1,5 +1,12 @@
 const usuariosService = require('../services/usuariosService');
 
+const getByObra = async (req, res, next) => {
+  try {
+    const data = await usuariosService.getByObra(req.params.obraId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 const getAll = async (req, res, next) => {
   try {
     const data = await usuariosService.getAll();
@@ -47,4 +54,4 @@ const remove = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getAll, create, update, remove };
+module.exports = { getAll, getByObra, create, update, remove };
