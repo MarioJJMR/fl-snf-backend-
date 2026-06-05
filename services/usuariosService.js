@@ -14,6 +14,14 @@ async function findById(id) {
   return rows[0] || null;
 }
 
+async function getByObra(obraId) {
+  const [rows] = await pool.query(
+    'SELECT id, usuario, nombre, email, rol, fecha_registro FROM usuarios WHERE obra_id = ? AND activo = 1',
+    [obraId]
+  );
+  return rows;
+}
+
 async function existsByUsername(usuario) {
   const [rows] = await pool.query('SELECT id FROM usuarios WHERE usuario = ?', [usuario]);
   return rows.length > 0;
@@ -53,4 +61,4 @@ async function remove(id) {
   await pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [id]);
 }
 
-module.exports = { getAll, findById, existsByUsername, create, update, remove };
+module.exports = { getAll, getByObra, findById, existsByUsername, create, update, remove };
