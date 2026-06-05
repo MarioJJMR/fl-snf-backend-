@@ -5,3 +5,4 @@ logs/
 *.pem
 *.log
 .vs/
+/.claude
