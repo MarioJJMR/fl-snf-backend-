@@ -15,7 +15,8 @@
       "Read(//c/Program Files/MySQL/MySQL Server 9.6/bin/**)",
       "Bash(\"C:/Program Files/MySQL/MySQL Server 9.6/bin/mysql\":*)",
       "Bash(netstat:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(lsof:*)"
     ]
   }
 }
