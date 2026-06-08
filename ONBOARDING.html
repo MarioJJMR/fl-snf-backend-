@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual de Onboarding — FL-SNF Backend</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222636;
+      --border: #2e3248;
+      --accent: #6c63ff;
+      --accent2: #4fc3f7;
+      --green: #4caf81;
+      --red: #e06c75;
+      --yellow: #e5c07b;
+      --text: #c9d1e0;
+      --text-dim: #7a8299;
+      --text-bright: #e8eaf6;
+      --code-bg: #12141e;
+      --tag-get: #1e4d2b;
+      --tag-get-text: #4caf81;
+      --tag-post: #1a3a5c;
+      --tag-post-text: #4fc3f7;
+      --tag-put: #3a2a10;
+      --tag-put-text: #e5c07b;
+      --tag-patch: #2e1f3a;
+      --tag-patch-text: #c792ea;
+      --tag-delete: #3a1a1a;
+      --tag-delete-text: #e06c75;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 32px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-logo .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-logo h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+      line-height: 1.3;
+    }
+
+    .sidebar-logo p {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 24px;
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      color: var(--text-bright);
+      background: var(--surface2);
+      border-left-color: var(--accent);
+    }
+
+    .sidebar nav a .num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 18px;
+    }
+
+    /* ── Main content ── */
+    .main {
+      flex: 1;
+      max-width: 900px;
+      padding: 48px 56px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-header .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-bright);
+      line-height: 1.2;
+    }
+
+    .page-header p {
+      color: var(--text-dim);
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 56px;
+      scroll-margin-top: 24px;
+    }
+
+    section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    section h2 .section-num {
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin: 28px 0 12px;
+    }
+
+    section p {
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    section ul, section ol {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    section li {
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    /* ── Inline code ── */
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      font-size: 13px;
+      background: var(--code-bg);
+      color: var(--accent2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    pre .comment { color: var(--text-dim); }
+    pre .key     { color: var(--accent2); }
+    pre .value   { color: var(--green); }
+    pre .branch  { color: var(--yellow); }
+    pre .arrow   { color: var(--accent); }
+
+    .pre-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    /* ── Tables ── */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+
+    td code { font-size: 12px; }
+
+    /* ── HTTP Method badges ── */
+    .method {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    .method-get    { background: var(--tag-get);    color: var(--tag-get-text); }
+    .method-post   { background: var(--tag-post);   color: var(--tag-post-text); }
+    .method-put    { background: var(--tag-put);    color: var(--tag-put-text); }
+    .method-patch  { background: var(--tag-patch);  color: var(--tag-patch-text); }
+    .method-delete { background: var(--tag-delete); color: var(--tag-delete-text); }
+
+    /* ── Auth badge ── */
+    .auth-yes {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(108,99,255,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(108,99,255,0.3);
+    }
+
+    .auth-no {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(122,130,153,0.1);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+
+    .auth-admin {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(229,192,123,0.12);
+      color: var(--yellow);
+      border: 1px solid rgba(229,192,123,0.25);
+    }
+
+    /* ── Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .card .card-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    /* ── Callouts ── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: rgba(108,99,255,0.07);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .callout.warning {
+      border-left-color: var(--yellow);
+      background: rgba(229,192,123,0.07);
+    }
+
+    .callout.danger {
+      border-left-color: var(--red);
+      background: rgba(224,108,117,0.07);
+    }
+
+    .callout.success {
+      border-left-color: var(--green);
+      background: rgba(76,175,129,0.07);
+    }
+
+    .callout strong { color: var(--text-bright); }
+
+    /* ── Architecture diagram ── */
+    .arch-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin: 24px 0;
+    }
+
+    .arch-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 32px;
+      text-align: center;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .arch-box .arch-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .arch-box .arch-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .arch-box.highlight {
+      border-color: var(--accent);
+      background: rgba(108,99,255,0.08);
+    }
+
+    .arch-arrow {
+      font-size: 20px;
+      color: var(--text-dim);
+      line-height: 1;
+      padding: 4px 0;
+    }
+
+    .arch-split {
+      display: flex;
+      gap: 20px;
+      margin-top: 4px;
+    }
+
+    .arch-split .arch-box {
+      min-width: 120px;
+      padding: 12px 20px;
+    }
+
+    .arch-split .arch-box.db { border-color: var(--green); background: rgba(76,175,129,0.07); }
+    .arch-split .arch-box.s3 { border-color: var(--accent2); background: rgba(79,195,247,0.07); }
+
+    /* ── Branch diagram ── */
+    .branch-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .branch-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    .branch-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .branch-name { font-weight: 700; }
+    .branch-desc { color: var(--text-dim); margin-left: 4px; }
+
+    .branch-indent { margin-left: 28px; }
+
+    /* ── Steps ── */
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    .steps li::before {
+      content: counter(step);
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 40px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { padding: 32px 24px; }
+    }
+
+    strong { color: var(--text-bright); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="badge">Onboarding</div>
+      <h2>FL-SNF Backend</h2>
+      <p>Fundacion Loyola — 2025</p>
+    </div>
+    <nav>
+      <a href="#sec-1"><span class="num">01</span> Descripcion general</a>
+      <a href="#sec-2"><span class="num">02</span> Repositorio y GitHub</a>
+      <a href="#sec-3"><span class="num">03</span> Estrategia de branches</a>
+      <a href="#sec-4"><span class="num">04</span> Entorno local</a>
+      <a href="#sec-5"><span class="num">05</span> Arquitectura</a>
+      <a href="#sec-6"><span class="num">06</span> Base de datos</a>
+      <a href="#sec-7"><span class="num">07</span> Variables de entorno</a>
+      <a href="#sec-8"><span class="num">08</span> Deploy con Railway</a>
+      <a href="#sec-9"><span class="num">09</span> Flujo de trabajo</a>
+      <a href="#sec-10"><span class="num">10</span> Endpoints</a>
+    </nav>
+  </aside>
+
+  <!-- ─── Main ─────────────────────────────────────── -->
+  <main class="main">
+
+    <div class="page-header">
+      <div class="label">Manual de Onboarding — Desarrolladores</div>
+      <h1>FL-SNF Backend</h1>
+      <p>Guia de incorporacion para nuevos desarrolladores del proyecto Fundacion Loyola SNF 2025.</p>
+    </div>
+
+    <!-- ─── 1. Descripcion general ── -->
+    <section id="sec-1">
+      <h2><span class="section-num">1</span> Descripcion general</h2>
+      <p><strong>FL-SNF Backend</strong> es la API REST del sistema de gestion de obras para la <strong>Fundacion Loyola</strong> (programa SNF 2025). Expone endpoints HTTP que consume el frontend para administrar obras, formularios, proyectos, documentos y usuarios.</p>
+
+      <div class="card-grid">
+        <div class="card"><div class="card-label">Runtime</div><div class="card-value">Node.js >= 18</div></div>
+        <div class="card"><div class="card-label">Framework</div><div class="card-value">Express</div></div>
+        <div class="card"><div class="card-label">Base de datos</div><div class="card-value">MySQL 8</div></div>
+        <div class="card"><div class="card-label">Archivos</div><div class="card-value">AWS S3</div></div>
+        <div class="card"><div class="card-label">Autenticacion</div><div class="card-value">JWT + Google OAuth</div></div>
+        <div class="card"><div class="card-label">Email</div><div class="card-value">Resend</div></div>
+        <div class="card"><div class="card-label">Deploy</div><div class="card-value">Railway</div></div>
+        <div class="card"><div class="card-label">Entry point</div><div class="card-value"><code>server.js</code></div></div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 2. Repositorio ── -->
+    <section id="sec-2">
+      <h2><span class="section-num">2</span> Repositorio y GitHub</h2>
+
+      <h3>URL del repositorio</h3>
+      <pre><code>https://github.com/MarioJJMR/fl-snf-backend-</code></pre>
+
+      <h3>Clonar el proyecto</h3>
+      <pre><code>git clone https://github.com/MarioJJMR/fl-snf-backend-.git
+cd fl-snf-backend-</code></pre>
+
+      <h3>Reglas generales</h3>
+      <ul>
+        <li><strong>Nunca hacer push directo a <code>main</code>.</strong> Siempre trabajar en <code>develop</code> o en una rama feature.</li>
+        <li>Todo cambio a produccion pasa por un Pull Request de <code>develop</code> → <code>main</code>.</li>
+        <li>Los mensajes de commit deben ser descriptivos y consistentes con el historial del proyecto.</li>
+        <li>No subir archivos <code>.env</code> al repositorio. Estan en <code>.gitignore</code>.</li>
+      </ul>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 3. Branches ── -->
+    <section id="sec-3">
+      <h2><span class="section-num">3</span> Estrategia de branches</h2>
+      <p>El proyecto usa un modelo simple de <strong>dos ramas principales</strong> mas ramas de feature temporales.</p>
+
+      <div class="branch-diagram">
+        <div class="branch-row">
+          <div class="branch-dot" style="background:#4caf81;"></div>
+          <span class="branch-name" style="color:#4caf81;">main</span>
+          <span class="branch-desc">← produccion (Railway Production)</span>
+        </div>
+        <div class="branch-row branch-indent">
+          <span style="color:var(--border);">│</span>
+        </div>
+        <div class="branch-row branch-indent">
+          <div class="branch-dot" style="background:#4fc3f7;"></div>
+          <span class="branch-name" style="color:#4fc3f7;">develop</span>
+          <span class="branch-desc">← desarrollo / staging</span>
+        </div>
+        <div class="branch-row branch-indent" style="margin-left:56px;">
+          <span style="color:var(--border);">│</span>
+        </div>
+        <div class="branch-row branch-indent" style="margin-left:56px;">
+          <div class="branch-dot" style="background:#c792ea;"></div>
+          <span class="branch-name" style="color:#c792ea;">feature/*</span>
+          <span class="branch-desc">← ramas temporales por tarea o fix</span>
+        </div>
+      </div>
+
+      <h3><code>main</code></h3>
+      <ul>
+        <li>Rama de <strong>produccion</strong>. Refleja lo que esta corriendo en Railway.</li>
+        <li>Solo recibe merges desde <code>develop</code> via Pull Request.</li>
+        <li>Cada merge desencadena un deploy automatico en Railway.</li>
+      </ul>
+      <div class="callout danger"><strong>No trabajar directamente en esta rama.</strong></div>
+
+      <h3><code>develop</code></h3>
+      <ul>
+        <li>Rama de <strong>desarrollo activo</strong>.</li>
+        <li>Aqui se integran las features antes de pasar a produccion.</li>
+        <li>Es la rama base para crear ramas de feature.</li>
+        <li>Puede estar conectada a un entorno de staging en Railway.</li>
+      </ul>
+
+      <h3>Ramas de feature</h3>
+      <p>Crear una rama nueva para cada tarea o bug, partiendo siempre desde <code>develop</code> actualizado:</p>
+      <pre><code>git checkout develop
+git pull origin develop
+git checkout -b feature/nombre-descriptivo</code></pre>
+      <p>Al terminar, abrir un Pull Request hacia <code>develop</code>.</p>
+
+      <h3>Flujo resumido</h3>
+      <pre><code><span class="branch">feature/mi-tarea</span>  <span class="arrow">──PR──▶</span>  <span class="branch">develop</span>  <span class="arrow">──PR──▶</span>  <span class="branch">main</span>  <span class="arrow">──▶</span>  Railway</code></pre>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 4. Entorno local ── -->
+    <section id="sec-4">
+      <h2><span class="section-num">4</span> Configuracion del entorno local</h2>
+
+      <h3>Prerrequisitos</h3>
+      <ul>
+        <li>Node.js >= 18</li>
+        <li>MySQL >= 8 corriendo localmente</li>
+        <li>Cuenta AWS con acceso a S3 (para funcionalidades de documentos)</li>
+      </ul>
+
+      <h3>Instalacion de dependencias</h3>
+      <pre><code>npm install</code></pre>
+
+      <h3>Variables de entorno</h3>
+      <p>Crear un archivo <code>.env</code> en la raiz del proyecto (ver seccion 7 para la lista completa):</p>
+      <pre><code><span class="comment"># copiar el ejemplo si existe, o crear manualmente</span>
+cp .env.example .env</code></pre>
+
+      <h3>Inicializar la base de datos</h3>
+      <pre><code><span class="comment"># Ejecuta las migraciones y crea las tablas</span>
+node db/migrate.js
+
+<span class="comment"># Inserta datos iniciales (usuarios por defecto)</span>
+npm run seed</code></pre>
+
+      <h3>Correr en modo desarrollo</h3>
+      <pre><code>npm run dev</code></pre>
+      <p>Levanta el servidor con <code>nodemon</code> en <code>http://localhost:3001</code> con recarga automatica.</p>
+
+      <h3>Correr tests</h3>
+      <pre><code>npm test</code></pre>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 5. Arquitectura ── -->
+    <section id="sec-5">
+      <h2><span class="section-num">5</span> Arquitectura de la aplicacion</h2>
+
+      <h3>Vision general</h3>
+      <div class="arch-diagram">
+        <div class="arch-box">
+          <div class="arch-title">Cliente (Frontend / App)</div>
+          <div class="arch-desc">HTTP Requests</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box highlight">
+          <div class="arch-title">server.js</div>
+          <div class="arch-desc">Express app · middlewares · rutas registradas</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">
+          <div class="arch-title">routes/</div>
+          <div class="arch-desc">Define endpoints y aplica middlewares de auth</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">
+          <div class="arch-title">controllers/</div>
+          <div class="arch-desc">Maneja req/res · valida input · delega logica</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box">
+          <div class="arch-title">services/</div>
+          <div class="arch-desc">Logica de negocio y queries a la base de datos</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-split">
+          <div class="arch-box db">
+            <div class="arch-title">MySQL</div>
+            <div class="arch-desc">helpers/db.js</div>
+          </div>
+          <div class="arch-box s3">
+            <div class="arch-title">AWS S3</div>
+            <div class="arch-desc">helpers/s3.js</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Estructura de carpetas</h3>
+      <pre><code>fl-snf-backend-/
+├── server.js              <span class="comment"># Entry point: Express, middlewares, rutas</span>
+│
+├── routes/                <span class="comment"># Definicion de rutas HTTP</span>
+│   ├── auth.js
+│   ├── obras.js
+│   ├── usuarios.js
+│   ├── formularios.js
+│   ├── proyectos.js
+│   ├── documentos.js
+│   └── correo.js
+│
+├── controllers/           <span class="comment"># Handlers HTTP: validan request, llaman al servicio</span>
+│   ├── authController.js
+│   ├── obrasController.js
+│   ├── usuariosController.js
+│   ├── formulariosController.js
+│   ├── proyectosController.js
+│   └── documentosController.js
+│
+├── services/              <span class="comment"># Logica de negocio y acceso a datos</span>
+│   ├── authService.js         <span class="comment"># Login, Google auth, reset de contrasena</span>
+│   ├── obrasService.js        <span class="comment"># CRUD de obras</span>
+│   ├── usuariosService.js     <span class="comment"># Gestion de usuarios</span>
+│   ├── formulariosService.js  <span class="comment"># Formularios dinamicos (datos JSON)</span>
+│   ├── proyectosService.js    <span class="comment"># Proyectos vigentes y por financiar</span>
+│   ├── documentosService.js   <span class="comment"># Subida/descarga de archivos via S3</span>
+│   └── correoService.js       <span class="comment"># Composicion y envio de correos</span>
+│
+├── helpers/               <span class="comment"># Utilidades transversales</span>
+│   ├── db.js              <span class="comment"># Pool de conexiones MySQL</span>
+│   ├── logger.js          <span class="comment"># Winston logger (consola + archivos)</span>
+│   ├── auth.js            <span class="comment"># Middleware de autenticacion JWT</span>
+│   ├── googleAuth.js      <span class="comment"># Verificacion de tokens Google</span>
+│   ├── mailer.js          <span class="comment"># Cliente Resend para emails</span>
+│   ├── s3.js              <span class="comment"># Cliente AWS S3</span>
+│   └── upload.js          <span class="comment"># Configuracion de multer (memoria)</span>
+│
+├── db/
+│   ├── schema.sql         <span class="comment"># Definicion de tablas</span>
+│   ├── migrate.js         <span class="comment"># Script de migraciones</span>
+│   └── seed.js            <span class="comment"># Datos iniciales</span>
+│
+├── tests/                 <span class="comment"># Tests con Jest + Supertest</span>
+├── logs/                  <span class="comment"># Logs en runtime (no versionados)</span>
+└── nixpacks.toml          <span class="comment"># Configuracion de build para Railway</span></code></pre>
+
+      <h3>Middlewares globales</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Middleware</th><th>Funcion</th></tr></thead>
+          <tbody>
+            <tr><td><code>helmet</code></td><td>Headers de seguridad HTTP</td></tr>
+            <tr><td><code>cors</code></td><td>Control de origenes permitidos via <code>FRONTEND_URL</code></td></tr>
+            <tr><td><code>express.json()</code></td><td>Parseo de body JSON</td></tr>
+            <tr><td><code>morgan</code></td><td>Log de cada request HTTP</td></tr>
+            <tr><td><code>express-rate-limit</code></td><td>Limite de peticiones en login, forgot-password y correo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Flujo de una request tipica</h3>
+      <pre><code>POST /api/obras
+  <span class="arrow">→</span> CORS check
+  <span class="arrow">→</span> Rate limit check
+  <span class="arrow">→</span> auth.js middleware (verifica JWT)
+  <span class="arrow">→</span> obrasController.js (valida body)
+  <span class="arrow">→</span> obrasService.js (query a MySQL)
+  <span class="arrow">→</span> Respuesta JSON { success: true, data: {...} }</code></pre>
+
+      <h3>Manejo de errores</h3>
+      <ul>
+        <li>Todos los controllers delegan errores no manejados a <code>next(err)</code>.</li>
+        <li>El global error handler en <code>server.js</code> los captura y responde.</li>
+        <li>En <code>development</code>: devuelve el mensaje completo del error.</li>
+        <li>En <code>production</code>: devuelve <code>"Error interno del servidor"</code>.</li>
+      </ul>
+
+      <h3>Almacenamiento de documentos (S3)</h3>
+      <p>Los archivos <strong>no se guardan en el servidor</strong>. El flujo de subida es:</p>
+      <pre><code>1. Cliente pide presigned URL  <span class="arrow">→</span>  POST /api/documentos/presigned-upload
+2. Cliente sube archivo a S3   <span class="arrow">→</span>  PUT &lt;presigned URL&gt;
+3. Cliente confirma subida     <span class="arrow">→</span>  POST /api/documentos/confirm-upload
+4. Backend guarda metadata en MySQL</code></pre>
+      <p>La descarga tambien usa presigned URLs:</p>
+      <pre><code>GET /api/documentos/:id/descargar  <span class="arrow">→</span>  retorna { data: { url } }
+Cliente descarga directamente desde S3</code></pre>
+
+      <h3>Logging</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Archivo</th><th>Contenido</th></tr></thead>
+          <tbody>
+            <tr><td><code>logs/app.log</code></td><td>Todos los logs (info, warn, error, http)</td></tr>
+            <tr><td><code>logs/error.log</code></td><td>Solo errores</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>En Railway los logs van a la consola y son visibles en el dashboard del proyecto.</p>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 6. Base de datos ── -->
+    <section id="sec-6">
+      <h2><span class="section-num">6</span> Base de datos</h2>
+      <p>Motor: <strong>MySQL 8</strong> &nbsp;|&nbsp; Base de datos: <code>fl_snf_db</code></p>
+
+      <h3>Tablas principales</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tabla</th><th>Descripcion</th></tr></thead>
+          <tbody>
+            <tr><td><code>usuarios</code></td><td>Usuarios del sistema con roles <code>admin</code> / <code>usuario</code></td></tr>
+            <tr><td><code>obras</code></td><td>Obras o instituciones que participan</td></tr>
+            <tr><td><code>formularios</code></td><td>Formularios dinamicos por obra (datos guardados en JSON)</td></tr>
+            <tr><td><code>proyectos</code></td><td>Proyectos vigentes o por financiar, por obra (datos en JSON)</td></tr>
+            <tr><td><code>documentos</code></td><td>Metadata de archivos almacenados en S3</td></tr>
+            <tr><td><code>password_reset_tokens</code></td><td>Tokens de un solo uso para reset de contrasena</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Relaciones clave</h3>
+      <pre><code>usuarios
+  ├── obras          (creado_por)
+  ├── formularios    (actualizado_por)
+  ├── proyectos      (creado_por, actualizado_por)
+  └── documentos     (subido_por)
+
+obras
+  ├── formularios    (obra_id)  [CASCADE DELETE]
+  ├── proyectos      (obra_id)  [CASCADE DELETE]
+  └── documentos     (obra_id)  [CASCADE DELETE]</code></pre>
+
+      <h3>Migraciones</h3>
+      <pre><code><span class="comment"># Crea o actualiza las tablas</span>
+node db/migrate.js
+
+<span class="comment"># Inserta usuarios por defecto</span>
+npm run seed</code></pre>
+      <div class="callout success">En produccion (Railway), el comando de inicio ya incluye las migraciones automaticamente.</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 7. Variables de entorno ── -->
+    <section id="sec-7">
+      <h2><span class="section-num">7</span> Variables de entorno</h2>
+
+      <div class="callout danger"><strong>Nunca subir el archivo <code>.env</code> al repositorio.</strong> Esta incluido en <code>.gitignore</code>.</div>
+
+      <p>Crear <code>.env</code> en la raiz del proyecto con las siguientes variables:</p>
+
+      <pre><code><span class="comment"># ── Servidor ────────────────────────────</span>
+<span class="key">PORT</span>=<span class="value">3001</span>
+<span class="key">NODE_ENV</span>=<span class="value">development</span>          <span class="comment"># development | production</span>
+
+<span class="comment"># ── JWT ─────────────────────────────────</span>
+<span class="key">JWT_SECRET</span>=<span class="value">tu_secreto_seguro_aqui</span>
+<span class="key">JWT_EXPIRES_IN</span>=<span class="value">7d</span>
+
+<span class="comment"># ── CORS ────────────────────────────────</span>
+<span class="key">FRONTEND_URL</span>=<span class="value">http://localhost:5173</span>
+<span class="comment"># EXTRA_ORIGINS=https://otro-dominio.com  # separados por coma</span>
+
+<span class="comment"># ── Google OAuth ────────────────────────</span>
+<span class="key">GCP_CLIENT_ID</span>=<span class="value">tu_google_client_id</span>
+
+<span class="comment"># ── MySQL ───────────────────────────────</span>
+<span class="key">DB_HOST</span>=<span class="value">localhost</span>
+<span class="key">DB_USER</span>=<span class="value">root</span>
+<span class="key">DB_PASSWORD</span>=<span class="value">tu_password</span>
+<span class="key">DB_NAME</span>=<span class="value">fl_snf_db</span>
+<span class="key">DB_PORT</span>=<span class="value">3306</span>
+
+<span class="comment"># ── Email (Resend) ───────────────────────</span>
+<span class="key">RESEND_API_KEY</span>=<span class="value">re_xxxxxxxxxxxxx</span>
+<span class="key">RESEND_FROM</span>=<span class="value">no-reply@tudominio.com</span>   <span class="comment"># opcional</span>
+
+<span class="comment"># ── AWS S3 ──────────────────────────────</span>
+<span class="key">AWS_ACCESS_KEY_ID</span>=<span class="value">AKIAXXXXXXXXXXXXXXXX</span>
+<span class="key">AWS_SECRET_ACCESS_KEY</span>=<span class="value">xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+<span class="key">AWS_REGION</span>=<span class="value">us-east-1</span>
+<span class="key">S3_BUCKET_NAME</span>=<span class="value">nombre-del-bucket</span></code></pre>
+
+      <p>En Railway estas variables se configuran directamente en el panel del proyecto (ver seccion 8).</p>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 8. Railway ── -->
+    <section id="sec-8">
+      <h2><span class="section-num">8</span> Deploy con Railway</h2>
+
+      <h3>Como funciona</h3>
+      <p>Railway detecta el archivo <code>nixpacks.toml</code> en la raiz y automatiza el build y start:</p>
+      <pre><code><span class="comment"># nixpacks.toml</span>
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]       <span class="comment"># instala solo dependencias de produccion</span>
+
+[start]
+cmd = "npm run seed && node server.js"  <span class="comment"># inicializa DB y arranca el server</span></code></pre>
+
+      <h3>Ambientes</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ambiente</th><th>Branch</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Production</strong></td><td><code>main</code></td><td>Produccion real, usuarios finales</td></tr>
+            <tr><td><strong>Staging</strong> (opcional)</td><td><code>develop</code></td><td>Pruebas previas al release</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Deploy automatico</h3>
+      <p>Cada push a <code>main</code> dispara un nuevo deploy en Railway. No se necesita hacer nada manual: Railway toma el codigo, corre <code>npm ci</code>, y ejecuta el comando de start.</p>
+
+      <h3>Configurar variables de entorno en Railway</h3>
+      <ol class="steps">
+        <li>Ir al proyecto en el dashboard de Railway.</li>
+        <li>Seleccionar el servicio del backend.</li>
+        <li>Ir a la tab <strong>Variables</strong>.</li>
+        <li>Agregar cada variable de la seccion 7.</li>
+      </ol>
+      <div class="callout warning">Las variables <strong>no se heredan</strong> automaticamente entre ambientes. Cada ambiente (Production / Staging) tiene sus propias variables.</div>
+
+      <h3>Ver logs en Railway</h3>
+      <ol>
+        <li>Dashboard del proyecto → servicio backend → tab <strong>Deployments</strong>.</li>
+        <li>Clic en el deployment activo → <strong>View Logs</strong>.</li>
+      </ol>
+      <p>O usando el CLI de Railway:</p>
+      <pre><code>railway logs</code></pre>
+
+      <h3>Health check</h3>
+      <p>El endpoint <code>/api/health</code> esta disponible sin autenticacion para verificar el estado del servidor y la base de datos:</p>
+      <pre><code>GET /api/health</code></pre>
+      <p>Respuesta exitosa:</p>
+      <pre><code>{
+  <span class="key">"success"</span>: <span class="value">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"status"</span>: <span class="value">"ok"</span>,
+    <span class="key">"version"</span>: <span class="value">"1.0.0"</span>,
+    <span class="key">"environment"</span>: <span class="value">"production"</span>,
+    <span class="key">"uptime"</span>: <span class="value">"0h 5m 12s"</span>,
+    <span class="key">"services"</span>: {
+      <span class="key">"database"</span>: { <span class="key">"status"</span>: <span class="value">"ok"</span> }
+    }
+  }
+}</code></pre>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 9. Flujo de trabajo ── -->
+    <section id="sec-9">
+      <h2><span class="section-num">9</span> Flujo de trabajo diario</h2>
+
+      <h3>Iniciar una nueva tarea</h3>
+      <pre><code><span class="comment"># 1. Asegurarse de tener develop actualizado</span>
+git checkout develop
+git pull origin develop
+
+<span class="comment"># 2. Crear rama de feature</span>
+git checkout -b feature/nombre-de-la-tarea
+
+<span class="comment"># 3. Hacer cambios...</span>
+
+<span class="comment"># 4. Commitear (agregar archivos especificos, no todo)</span>
+git add archivo-especifico.js
+git commit -m "feat: descripcion del cambio"
+
+<span class="comment"># 5. Subir rama</span>
+git push origin feature/nombre-de-la-tarea</code></pre>
+
+      <h3>Abrir Pull Request</h3>
+      <ul>
+        <li><strong>Base:</strong> <code>develop</code></li>
+        <li><strong>Compare:</strong> <code>feature/nombre-de-la-tarea</code></li>
+        <li><strong>Descripcion:</strong> que cambia y por que</li>
+      </ul>
+
+      <h3>Pasar a produccion</h3>
+      <p>Cuando <code>develop</code> esta listo para release:</p>
+      <ol>
+        <li>Abrir PR de <code>develop</code> → <code>main</code>.</li>
+        <li>Revisar, aprobar, y mergear.</li>
+        <li>Railway hace el deploy automaticamente.</li>
+      </ol>
+
+      <h3>Ciclo completo</h3>
+      <pre><code><span class="branch">feature branch</span>  <span class="arrow">──PR──▶</span>  <span class="branch">develop</span>  <span class="arrow">──PR──▶</span>  <span class="branch">main</span>  <span class="arrow">──▶</span>  Railway Production</code></pre>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ─── 10. Endpoints ── -->
+    <section id="sec-10">
+      <h2><span class="section-num">10</span> Endpoints disponibles</h2>
+      <p>Prefijo base: <code>/api</code></p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Metodo</th><th>Ruta</th><th>Descripcion</th><th>Auth</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/health</code></td>
+              <td>Estado del servidor y DB</td>
+              <td><span class="auth-no">No</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/auth/login</code></td>
+              <td>Login con email/password</td>
+              <td><span class="auth-no">No</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/auth/google</code></td>
+              <td>Login con Google</td>
+              <td><span class="auth-no">No</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/auth/forgot-password</code></td>
+              <td>Solicitar reset de contrasena</td>
+              <td><span class="auth-no">No</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/auth/reset-password</code></td>
+              <td>Cambiar contrasena con token</td>
+              <td><span class="auth-no">No</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/obras</code></td>
+              <td>Listar todas las obras</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/obras</code></td>
+              <td>Crear obra</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/obras/:id</code></td>
+              <td>Obtener obra por ID</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-put">PUT</span></td>
+              <td><code>/obras/:id</code></td>
+              <td>Actualizar obra</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-delete">DELETE</span></td>
+              <td><code>/obras/:id</code></td>
+              <td>Eliminar obra</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/usuarios</code></td>
+              <td>Listar usuarios</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/usuarios</code></td>
+              <td>Crear usuario</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-patch">PATCH</span></td>
+              <td><code>/usuarios/:id</code></td>
+              <td>Actualizar usuario</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/formularios/:obraId/:formKey</code></td>
+              <td>Obtener formulario</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/formularios/:obraId/:formKey</code></td>
+              <td>Guardar formulario</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/proyectos/:obraId</code></td>
+              <td>Listar proyectos de una obra</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/proyectos</code></td>
+              <td>Crear proyecto</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-put">PUT</span></td>
+              <td><code>/proyectos/:id</code></td>
+              <td>Actualizar proyecto</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-delete">DELETE</span></td>
+              <td><code>/proyectos/:id</code></td>
+              <td>Eliminar proyecto</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/documentos/presigned-upload</code></td>
+              <td>Pedir URL para subir archivo a S3</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/documentos/confirm-upload</code></td>
+              <td>Confirmar subida y registrar metadata</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/documentos/:obraId</code></td>
+              <td>Listar documentos de una obra</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td><code>/documentos/:id/descargar</code></td>
+              <td>Obtener URL de descarga desde S3</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-delete">DELETE</span></td>
+              <td><code>/documentos/:id</code></td>
+              <td>Eliminar documento</td>
+              <td><span class="auth-admin">Admin</span></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td><code>/correo/sondeo</code></td>
+              <td>Enviar correo de sondeo</td>
+              <td><span class="auth-yes">JWT</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Formato de respuesta estandar</h3>
+      <p>Todas las respuestas siguen el mismo formato:</p>
+      <pre><code><span class="comment">// Exito</span>
+{ <span class="key">"success"</span>: <span class="value">true</span>,  <span class="key">"data"</span>: { ... } }
+
+<span class="comment">// Error</span>
+{ <span class="key">"success"</span>: <span class="value">false</span>, <span class="key">"error"</span>: <span class="value">"Descripcion del error"</span> }</code></pre>
+
+      <h3>Autenticacion</h3>
+      <p>Incluir el JWT en el header de cada request autenticada:</p>
+      <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>El token se obtiene en <code>POST /api/auth/login</code> y expira segun <code>JWT_EXPIRES_IN</code>.</p>
+    </section>
+
+    <hr class="divider" />
+
+    <div class="callout">
+      <strong>Para dudas sobre el proyecto, revisar primero:</strong><br/>
+      <code>RELEASE.md</code> — historial de cambios arquitectonicos<br/>
+      <code>db/schema.sql</code> — definicion completa de la base de datos<br/>
+      <code>server.js</code> — comentarios sobre la configuracion de seguridad
+    </div>
+
+    <div class="footer">
+      Manual de Onboarding — FL-SNF Backend · Fundacion Loyola 2025
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.sidebar nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.sidebar nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
