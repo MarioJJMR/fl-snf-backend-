@@ -16,7 +16,8 @@
       "Bash(\"C:/Program Files/MySQL/MySQL Server 9.6/bin/mysql\":*)",
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(git:*)"
     ]
   }
 }
