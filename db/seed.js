@@ -242,38 +242,56 @@ async function seed() {
 
   await conn.query(`SET FOREIGN_KEY_CHECKS = 1`);
 
-  // ── Seed users ─────────────────────────────────────────────────────────────
-  const adminHash = await bcrypt.hash('1234', 10);
-  const obraHash  = await bcrypt.hash('5678', 10);
-
-  const users = [
-    [uuidv4(), 'admin', adminHash, 'admin',   'Administrador', 'admin@fundacionloyola.org'],
-    [uuidv4(), 'obra',  obraHash,  'usuario', 'Usuario Obra',  'obra@fundacionloyola.org']
+  // ── Seed obras ─────────────────────────────────────────────────────────────
+  const obrasSeed = [
+    {
+      id:          '61a66a17-d235-441b-ba08-3ab13009e674',
+      nombre_obra: 'Obra San Ignacio',
+      estado:      'Jalisco',
+      direccion:   'Av. San Ignacio 100, Guadalajara',
+      telefono:    '3310000001',
+      correo:      'contacto@obra.mx'
+    },
+    {
+      id:          '7061fe6c-77dd-453d-bb94-69a62df8caf6',
+      nombre_obra: 'Centro Comunitario San Ignacio',
+      estado:      'Jalisco',
+      direccion:   'Calle Comunidad 200, Guadalajara',
+      telefono:    '3310000002',
+      correo:      'director@sanignacio.org.mx'
+    }
   ];
 
-  for (const [id, usuario, contrasena, rol, nombre, email] of users) {
+  for (const o of obrasSeed) {
     await conn.query(
-      `INSERT IGNORE INTO usuarios (id, usuario, contrasena, rol, nombre, email) VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, usuario, contrasena, rol, nombre, email]
+      `INSERT IGNORE INTO obras (id, nombre_obra, estado, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?, ?)`,
+      [o.id, o.nombre_obra, o.estado, o.direccion, o.telefono, o.correo]
     );
   }
 
-  // Actualiza el email de usuarios existentes que no lo tengan (instalaciones previas)
-  await conn.query(`UPDATE usuarios SET email = 'admin@fundacionloyola.org' WHERE usuario = 'admin' AND email IS NULL`);
-  await conn.query(`UPDATE usuarios SET email = 'obra@fundacionloyola.org'  WHERE usuario = 'obra'  AND email IS NULL`);
+  // ── Seed users ─────────────────────────────────────────────────────────────
+  const defaultHash     = await bcrypt.hash('12345678', 10);
+  const plataformaHash  = await bcrypt.hash('12345678', 10);
 
-  // ── Seed obra de ejemplo ───────────────────────────────────────────────────
-  const obraId = uuidv4();
-  await conn.query(
-    `INSERT IGNORE INTO obras (id, nombre_obra, estado, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?, ?)`,
-    [obraId, 'Obra Ejemplo — Casa de la Juventud', 'Jalisco', 'Av. Loyola 123, Guadalajara', '3312345678', 'ejemplo@obra.mx']
-  );
+  const users = [
+    // Admin global Fundación Loyola
+    { id: uuidv4(), usuario: 'plataforma', nombre: 'Plataforma Fundación Loyola', email: 'plataforma@fundacionloyola.mx', hash: plataformaHash, rol: 'admin',   obra_id: null },
+    // Obra San Ignacio
+    { id: uuidv4(), usuario: 'admin.sanignacio',    nombre: 'Administrador San Ignacio', email: 'admin@obra.mx',    hash: defaultHash, rol: 'usuario', obra_id: '61a66a17-d235-441b-ba08-3ab13009e674' },
+    { id: uuidv4(), usuario: 'director.sanignacio', nombre: 'Director San Ignacio',      email: 'director@obra.mx', hash: defaultHash, rol: 'usuario', obra_id: '61a66a17-d235-441b-ba08-3ab13009e674' },
+    { id: uuidv4(), usuario: 'gestor.sanignacio',   nombre: 'Gestor San Ignacio',        email: 'gestor@obra.mx',   hash: defaultHash, rol: 'usuario', obra_id: '61a66a17-d235-441b-ba08-3ab13009e674' },
+    // Centro Comunitario San Ignacio
+    { id: uuidv4(), usuario: 'admin.ccsi',    nombre: 'Administrador CCSI', email: 'admin@sanignacio.org.mx',    hash: defaultHash, rol: 'usuario', obra_id: '7061fe6c-77dd-453d-bb94-69a62df8caf6' },
+    { id: uuidv4(), usuario: 'director.ccsi', nombre: 'Director CCSI',      email: 'director@sanignacio.org.mx', hash: defaultHash, rol: 'usuario', obra_id: '7061fe6c-77dd-453d-bb94-69a62df8caf6' },
+    { id: uuidv4(), usuario: 'gestor.ccsi',   nombre: 'Gestor CCSI',        email: 'gestor@sanignacio.org.mx',   hash: defaultHash, rol: 'usuario', obra_id: '7061fe6c-77dd-453d-bb94-69a62df8caf6' },
+  ];
 
-  // Asignar obra al usuario 'obra' si aún no tiene una asignada
-  await conn.query(
-    `UPDATE usuarios SET obra_id = ? WHERE usuario = 'obra' AND obra_id IS NULL`,
-    [obraId]
-  );
+  for (const u of users) {
+    await conn.query(
+      `INSERT IGNORE INTO usuarios (id, usuario, contrasena, rol, nombre, email, obra_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [u.id, u.usuario, u.hash, u.rol, u.nombre, u.email, u.obra_id]
+    );
+  }
 
   // ── Seed proyectos de ejemplo ──────────────────────────────────────────────
   const proyectosSeed = [
@@ -283,26 +301,28 @@ async function seed() {
     { tipo: 'financiar', status: 'rechazado', datos: { nombre: 'Equipo de Cómputo para Biblioteca', descripcion: 'Adquisición de 20 computadoras para sala de cómputo', monto_solicitado: 200000, beneficiarios: 200 } },
   ];
 
-  // Obtener el id del usuario admin para creado_por
-  const [[adminUser]] = await conn.query(`SELECT id FROM usuarios WHERE usuario = 'admin' LIMIT 1`);
+  // Obtener el id del usuario plataforma para creado_por
+  const [[adminUser]] = await conn.query(`SELECT id FROM usuarios WHERE usuario = 'plataforma' LIMIT 1`);
   const adminUserId = adminUser?.id || null;
+  const seedObraId  = '61a66a17-d235-441b-ba08-3ab13009e674'; // Obra San Ignacio
 
   for (const p of proyectosSeed) {
-    // Solo insertar si no existe ya un proyecto con ese nombre en esa obra
     const [[existing]] = await conn.query(
       `SELECT id FROM proyectos WHERE obra_id = ? AND JSON_EXTRACT(datos, '$.nombre') = ? LIMIT 1`,
-      [obraId, p.datos.nombre]
+      [seedObraId, p.datos.nombre]
     );
     if (!existing) {
       await conn.query(
         `INSERT INTO proyectos (obra_id, tipo, status, datos, creado_por, actualizado_por) VALUES (?, ?, ?, ?, ?, ?)`,
-        [obraId, p.tipo, p.status, JSON.stringify(p.datos), adminUserId, adminUserId]
+        [seedObraId, p.tipo, p.status, JSON.stringify(p.datos), adminUserId, adminUserId]
       );
     }
   }
 
   console.log('✅ Base de datos inicializada correctamente');
-  console.log('👤 Usuarios: admin@fundacionloyola.org / 1234  y  obra@fundacionloyola.org / 5678');
+  console.log('👤 Admin:    plataforma@fundacionloyola.mx / 12345678');
+  console.log('👤 Obra San Ignacio:          admin@obra.mx | director@obra.mx | gestor@obra.mx  / 12345678');
+  console.log('👤 Centro Comunitario CCSI:   admin@sanignacio.org.mx | director@sanignacio.org.mx | gestor@sanignacio.org.mx  / 12345678');
   await conn.end();
 }
 
