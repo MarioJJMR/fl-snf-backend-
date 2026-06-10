@@ -83,4 +83,30 @@ async function sendSoporte({ nombre, email, asunto, mensaje, obra }) {
   });
 }
 
-module.exports = { sendSondeo, sendSoporte };
+async function sendNotificacion({ asunto, mensaje, obraNombre, destinatarioEmail, adminNombre }) {
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#111827">
+      <div style="background:#0d6835;padding:28px 32px;border-radius:8px 8px 0 0">
+        <h2 style="color:#fff;margin:0;font-size:20px">📢 Aviso — Fundación Loyola</h2>
+        <p style="color:rgba(255,255,255,0.75);margin:6px 0 0;font-size:13px">Sistema FL-SNF 2025</p>
+      </div>
+      <div style="background:#fff;padding:28px 32px;border:1px solid #d4e8da;border-top:none">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px">
+          <tr><td style="padding:6px 0;color:#4a5568;width:120px"><strong>Para</strong></td><td style="padding:6px 0">${escapeHtml(obraNombre)}</td></tr>
+          <tr><td style="padding:6px 0;color:#4a5568"><strong>Asunto</strong></td><td style="padding:6px 0;font-weight:700">${escapeHtml(asunto)}</td></tr>
+          <tr><td style="padding:6px 0;color:#4a5568"><strong>De parte de</strong></td><td style="padding:6px 0">${escapeHtml(adminNombre || 'Administración FL-SNF')}</td></tr>
+          <tr><td style="padding:6px 0;color:#4a5568"><strong>Fecha</strong></td><td style="padding:6px 0">${new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })}</td></tr>
+        </table>
+        <div style="padding:20px;background:#f0f9f4;border-radius:8px;border-left:4px solid #0d6835">
+          <p style="margin:0;font-size:15px;line-height:1.7;white-space:pre-wrap">${escapeHtml(mensaje)}</p>
+        </div>
+      </div>
+      <div style="background:#f4f6f9;padding:14px 32px;border-radius:0 0 8px 8px;border:1px solid #d4e8da;border-top:none;font-size:11px;color:#8a96a8;text-align:center">
+        Sistema FL-SNF · Fundación Loyola · ${new Date().getFullYear()}
+      </div>
+    </div>
+  `;
+  await sendMail({ to: destinatarioEmail, subject: `[FL-SNF] ${escapeHtml(asunto)}`, html });
+}
+
+module.exports = { sendSondeo, sendSoporte, sendNotificacion };

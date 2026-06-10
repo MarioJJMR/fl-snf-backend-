@@ -149,6 +149,31 @@ async function migrate() {
     console.log('✓ Tabla documentos ya existe');
   }
 
+  // Migración: tabla notificaciones
+  const [notifTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'notificaciones']
+  );
+  if (notifTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE notificaciones (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        asunto          VARCHAR(255) NOT NULL,
+        mensaje         TEXT NOT NULL,
+        destinatarios   JSON NOT NULL,
+        nombres_obras   JSON,
+        enviado_por     VARCHAR(36),
+        total_enviados  INT DEFAULT 0,
+        fecha_envio     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_fecha (fecha_envio),
+        FOREIGN KEY (enviado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+      )
+    `);
+    console.log('✅ Tabla notificaciones creada');
+  } else {
+    console.log('✓ Tabla notificaciones ya existe');
+  }
+
   await conn.end();
   console.log('Migración completa');
 }
