@@ -17,7 +17,10 @@
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
       "Bash(lsof:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(railway run:*)",
+      "Bash(railway link:*)",
+      "Bash(railway:*)"
     ]
   }
 }
