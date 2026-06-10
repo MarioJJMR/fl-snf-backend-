@@ -45,28 +45,34 @@ router.post('/soporte', verifyToken, async (req, res, next) => {
 // POST /api/correo/notificacion  (admin only)
 router.post('/notificacion', verifyToken, requireRole('admin'), async (req, res, next) => {
   try {
-    const { asunto, mensaje, obras } = req.body;
+    const { asunto, mensaje, obras, rol } = req.body;
     if (!asunto || !mensaje || !obras)
       return res.status(400).json({ success: false, error: 'asunto, mensaje y obras son requeridos' });
 
     if (!process.env.RESEND_API_KEY)
       return res.status(503).json({ success: false, error: 'Servicio de correo no configurado' });
 
+    // Filtro de rol: 'todos' | 'usuario' | 'admin'
+    const rolFilter = rol && rol !== 'todos' ? rol : null;
+
     // Obtener usuarios destinatarios
-    let usuariosQuery, queryParams;
+    let usuariosQuery;
     if (obras === 'todas' || (Array.isArray(obras) && obras.includes('todas'))) {
+      const rolClause = rolFilter ? ' AND u.rol = ?' : '';
       [usuariosQuery] = await pool.query(
         `SELECT u.email, u.nombre, o.nombre_obra
          FROM usuarios u JOIN obras o ON u.obra_id = o.id
-         WHERE u.email IS NOT NULL AND u.activo = 1`
+         WHERE u.email IS NOT NULL AND u.activo = 1${rolClause}`,
+        rolFilter ? [rolFilter] : []
       );
     } else {
       const ids = Array.isArray(obras) ? obras : [obras];
+      const rolClause = rolFilter ? ' AND u.rol = ?' : '';
       [usuariosQuery] = await pool.query(
         `SELECT u.email, u.nombre, o.nombre_obra
          FROM usuarios u JOIN obras o ON u.obra_id = o.id
-         WHERE u.obra_id IN (?) AND u.email IS NOT NULL AND u.activo = 1`,
-        [ids]
+         WHERE u.obra_id IN (?) AND u.email IS NOT NULL AND u.activo = 1${rolClause}`,
+        rolFilter ? [ids, rolFilter] : [ids]
       );
     }
 
