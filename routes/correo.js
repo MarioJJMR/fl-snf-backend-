@@ -49,8 +49,7 @@ router.post('/notificacion', verifyToken, requireRole('admin'), async (req, res,
     if (!asunto || !mensaje || !obras)
       return res.status(400).json({ success: false, error: 'asunto, mensaje y obras son requeridos' });
 
-    if (!process.env.RESEND_API_KEY)
-      return res.status(503).json({ success: false, error: 'Servicio de correo no configurado' });
+    const correoActivo = !!process.env.RESEND_API_KEY;
 
     // Filtro de rol: 'todos' | 'usuario' | 'admin'
     const rolFilter = rol && rol !== 'todos' ? rol : null;
@@ -83,19 +82,21 @@ router.post('/notificacion', verifyToken, requireRole('admin'), async (req, res,
     const nombresObras = [...new Set(usuariosQuery.map(u => u.nombre_obra))];
     let totalEnviados = 0;
 
-    for (const u of usuariosQuery) {
-      try {
-        await correoService.sendNotificacion({
-          asunto, mensaje,
-          obraNombre: u.nombre_obra,
-          destinatarioEmail: u.email,
-          adminNombre
-        });
-        totalEnviados++;
-      } catch { /* continuar con los demás */ }
+    if (correoActivo) {
+      for (const u of usuariosQuery) {
+        try {
+          await correoService.sendNotificacion({
+            asunto, mensaje,
+            obraNombre: u.nombre_obra,
+            destinatarioEmail: u.email,
+            adminNombre
+          });
+          totalEnviados++;
+        } catch { /* continuar con los demás */ }
+      }
     }
 
-    // Guardar en historial
+    // Guardar en historial (siempre, incluso sin correo)
     const destinatariosJSON = obras === 'todas' ? ['todas'] : (Array.isArray(obras) ? obras : [obras]);
     await pool.query(
       `INSERT INTO notificaciones (asunto, mensaje, destinatarios, nombres_obras, enviado_por, total_enviados)
@@ -103,7 +104,14 @@ router.post('/notificacion', verifyToken, requireRole('admin'), async (req, res,
       [asunto, mensaje, JSON.stringify(destinatariosJSON), JSON.stringify(nombresObras), req.user.id, totalEnviados]
     );
 
-    res.json({ success: true, data: { totalEnviados, nombresObras } });
+    res.json({
+      success: true,
+      data: {
+        totalEnviados,
+        nombresObras,
+        ...(!correoActivo && { advertencia: 'Servicio de correo no configurado — aviso guardado solo en el sistema' })
+      }
+    });
   } catch (err) {
     next(err);
   }
