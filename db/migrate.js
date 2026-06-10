@@ -174,6 +174,26 @@ async function migrate() {
     console.log('✓ Tabla notificaciones ya existe');
   }
 
+  // Migración: tabla notificaciones_vistas
+  const [vistasTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'notificaciones_vistas']
+  );
+  if (vistasTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE notificaciones_vistas (
+        notif_id  INT NOT NULL,
+        obra_id   VARCHAR(36) NOT NULL,
+        fecha     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (notif_id, obra_id),
+        FOREIGN KEY (notif_id) REFERENCES notificaciones(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✅ Tabla notificaciones_vistas creada');
+  } else {
+    console.log('✓ Tabla notificaciones_vistas ya existe');
+  }
+
   await conn.end();
   console.log('Migración completa');
 }
