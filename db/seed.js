@@ -129,6 +129,7 @@ async function seed() {
       obra_id           VARCHAR(36) NOT NULL,
       nombre_original   VARCHAR(255) NOT NULL,
       nombre_archivo    VARCHAR(255) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL DEFAULT 'general',
       mime_type         VARCHAR(100),
       tamano            BIGINT UNSIGNED,
       subido_por        VARCHAR(36),
@@ -139,7 +140,34 @@ async function seed() {
     )
   `);
 
-  // ── 6. sesiones_revocadas (blacklist de JWTs para logout real) ─────────────
+  // ── 6. notificaciones ──────────────────────────────────────────────────────
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id              INT AUTO_INCREMENT PRIMARY KEY,
+      asunto          VARCHAR(255) NOT NULL,
+      mensaje         TEXT NOT NULL,
+      destinatarios   JSON NOT NULL,
+      nombres_obras   JSON,
+      enviado_por     VARCHAR(36),
+      total_enviados  INT DEFAULT 0,
+      fecha_envio     DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_fecha (fecha_envio),
+      FOREIGN KEY (enviado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+    )
+  `);
+
+  // ── 7. notificaciones_vistas ───────────────────────────────────────────────
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS notificaciones_vistas (
+      notif_id  INT NOT NULL,
+      obra_id   VARCHAR(36) NOT NULL,
+      fecha     DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (notif_id, obra_id),
+      FOREIGN KEY (notif_id) REFERENCES notificaciones(id) ON DELETE CASCADE
+    )
+  `);
+
+  // ── 9. sesiones_revocadas (blacklist de JWTs para logout real) ─────────────
   await conn.query(`
     CREATE TABLE IF NOT EXISTS sesiones_revocadas (
       jti       VARCHAR(36) PRIMARY KEY,
@@ -148,7 +176,7 @@ async function seed() {
     )
   `);
 
-  // ── 7. password_reset_tokens ───────────────────────────────────────────────
+  // ── 10. password_reset_tokens ──────────────────────────────────────────────
   await conn.query(`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
       token      VARCHAR(36) PRIMARY KEY,
@@ -192,6 +220,12 @@ async function seed() {
   await safeAlter(conn,
     `ALTER TABLE documentos MODIFY COLUMN tamano BIGINT UNSIGNED`,
     'tamano ya es BIGINT'
+  );
+
+  // Fix: columna categoria en documentos (instalaciones anteriores)
+  await safeAlter(conn,
+    `ALTER TABLE documentos ADD COLUMN categoria VARCHAR(100) NOT NULL DEFAULT 'general' AFTER nombre_archivo`,
+    'categoria ya existe en documentos'
   );
 
   // Fix #6: índices faltantes
