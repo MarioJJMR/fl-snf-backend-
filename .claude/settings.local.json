@@ -20,7 +20,8 @@
       "Bash(git:*)",
       "Bash(railway run:*)",
       "Bash(railway link:*)",
-      "Bash(railway:*)"
+      "Bash(railway:*)",
+      "Bash(start:*)"
     ]
   }
 }

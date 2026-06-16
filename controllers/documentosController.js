@@ -7,8 +7,14 @@ const logger = require('../helpers/logger');
 
 const getAll = async (req, res, next) => {
   try {
-    const data = await documentosService.getAll(req.params.obraId);
-    res.json({ success: true, data });
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const { rows, total } = await documentosService.getAll(req.params.obraId, { page, limit });
+    res.json({
+      success: true,
+      data: rows,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    });
   } catch (err) { next(err); }
 };
 
