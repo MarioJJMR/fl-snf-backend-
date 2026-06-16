@@ -2,8 +2,14 @@ const obrasService = require('../services/obrasService');
 
 const getAll = async (req, res, next) => {
   try {
-    const data = await obrasService.getAll();
-    res.json({ success: true, data });
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const { rows, total } = await obrasService.getAll({ page, limit });
+    res.json({
+      success: true,
+      data: rows,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    });
   } catch (err) { next(err); }
 };
 

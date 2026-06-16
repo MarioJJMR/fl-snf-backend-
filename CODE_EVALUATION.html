@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluación de Código — FL-SNF Backend</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f0f4fa;
+      --surface:   #ffffff;
+      --surface2:  #e8eef8;
+      --border:    #c8d6ee;
+      --text:      #1a2540;
+      --muted:     #4a5e8a;
+      --accent:    #1c3bcc;
+      --blue:      #1565c0;
+      --blue-lt:   #e3ecfa;
+      --yellow:    #f5a800;
+      --yellow-lt: #fff8e1;
+      --red:       #c62828;
+      --red-lt:    #fdecea;
+      --orange:    #e65100;
+      --orange-lt: #fff3e0;
+      --green:     #1b7c3e;
+      --green-lt:  #e6f4ec;
+      --radius:    10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1c3bcc 0%, #0d2494 100%);
+      border-radius: 14px;
+      padding: 36px 40px;
+      margin-bottom: 36px;
+      color: #fff;
+    }
+    .header .tag {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 14px;
+      margin-bottom: 14px;
+    }
+    .header h1 { font-size: 2rem; font-weight: 800; }
+    .header h1 span { color: #ffd54f; }
+    .header .meta { color: rgba(255,255,255,.75); font-size: 13px; margin-top: 10px; }
+    .header .meta strong { color: #fff; }
+
+    /* ── Score cards ── */
+    .scores {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+    .score-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(28,59,204,.06);
+    }
+    .score-card .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+    .score-card .score { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+    .score-card .sublabel { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .score-card .delta { font-size: 11px; font-weight: 700; margin-top: 5px; color: var(--green); }
+    .score-blue   { color: var(--blue); }
+    .score-yellow { color: var(--yellow); }
+    .score-green  { color: var(--green); }
+
+    /* ── Correcciones aplicadas banner ── */
+    .fixes-banner {
+      background: var(--green-lt);
+      border: 1px solid #a5d6b8;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 36px;
+    }
+    .fixes-banner h3 { font-size: 14px; font-weight: 800; color: var(--green); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .06em; }
+    .fixes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+    .fix-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #a5d6b8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .fix-item .fix-icon { color: var(--green); font-weight: 900; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+    .fix-item strong { color: var(--text); display: block; margin-bottom: 2px; }
+    .fix-item span { color: var(--muted); font-size: 12px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 48px; }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--blue);
+      border-left: 4px solid var(--yellow);
+      padding-left: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Cards grid ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: 0 1px 3px rgba(28,59,204,.05);
+    }
+    .card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 10px;
+      border-bottom: 2px solid var(--yellow);
+      padding-bottom: 6px;
+    }
+    .card p, .card li { font-size: 13.5px; color: var(--muted); }
+    .card ul { padding-left: 18px; }
+    .card ul li { margin-bottom: 5px; }
+
+    /* ── Arch flow ── */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 14px 0 4px;
+    }
+    .arch-box {
+      background: var(--blue-lt);
+      border: 1px solid #b0c4e8;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--blue);
+      white-space: nowrap;
+    }
+    .arch-arrow { color: var(--yellow); font-size: 20px; font-weight: 900; padding: 0 5px; }
+
+    /* ── Findings ── */
+    .findings { display: flex; flex-direction: column; gap: 12px; }
+    .finding {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(28,59,204,.05);
+    }
+    .finding.resolved {
+      opacity: .75;
+      border-color: #a5d6b8;
+    }
+    .finding.resolved .finding-header { background: var(--green-lt); border-bottom-color: #a5d6b8; }
+    .finding-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 18px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .finding-title { font-weight: 700; font-size: 14px; color: var(--text); }
+    .finding-body  { padding: 14px 18px; }
+    .finding-body p { font-size: 13.5px; color: var(--muted); margin-bottom: 8px; }
+    .finding-body p:last-child { margin-bottom: 0; }
+    .finding-body strong { color: var(--text); }
+
+    /* ── Badges ── */
+    .badge {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 3px 11px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-medium   { background: var(--orange-lt); color: var(--orange); border: 1px solid #ffcc80; }
+    .badge-low      { background: var(--yellow-lt); color: #b07800;       border: 1px solid #ffe082; }
+    .badge-info     { background: var(--blue-lt);   color: var(--blue);   border: 1px solid #90b8e8; }
+    .badge-resolved { background: var(--green-lt);  color: var(--green);  border: 1px solid #a5d6b8; }
+    .badge-pri1     { background: var(--red-lt);    color: var(--red);    border: 1px solid #ef9a9a; }
+    .badge-pri2     { background: var(--blue-lt);   color: var(--blue);   border: 1px solid #90b8e8; }
+
+    /* ── Code ── */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      background: var(--blue-lt);
+      border: 1px solid #c0d0f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--blue);
+    }
+    pre {
+      background: #1a2540;
+      border: 1px solid #2d3f6a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12.5px;
+      color: #cdd9f5;
+      margin: 10px 0;
+      line-height: 1.65;
+    }
+    pre .c  { color: #6a82b8; }
+    pre .k  { color: #ffd54f; }
+    pre .fn { color: #90caf9; }
+    pre .kw { color: #ffab40; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 2px solid var(--border); margin: 40px 0; }
+
+    /* ── Summary table ── */
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+    .summary-table th {
+      background: #1c3bcc;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      padding: 11px 14px;
+      text-align: left;
+    }
+    .summary-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--muted); }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .summary-table tr:hover td { background: var(--blue-lt); }
+    .summary-table td:first-child { font-weight: 700; color: var(--text); }
+    .summary-table tr.row-resolved td { background: var(--green-lt); color: #3a6b50; }
+    .summary-table tr.row-resolved:hover td { background: #d0eddb; }
+    .summary-table tr.row-resolved td:first-child { color: var(--green); }
+
+    /* ── Positives ── */
+    .positive-list { display: flex; flex-direction: column; gap: 8px; }
+    .positive-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--green-lt);
+      border: 1px solid #a5d6b8;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+    }
+    .positive-item .icon {
+      background: var(--green);
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .positive-item strong { color: var(--text); }
+    .positive-item span { color: var(--muted); }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-bottom: 36px; }
+    .progress-label { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .progress-label span { color: var(--green); font-weight: 800; }
+    .progress-bar { background: var(--border); border-radius: 20px; height: 10px; overflow: hidden; }
+    .progress-fill { background: linear-gradient(90deg, var(--green) 0%, #34a85a 100%); height: 100%; border-radius: 20px; transition: width .4s; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 2px solid var(--border);
+      padding-top: 24px;
+      margin-top: 60px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="tag">Reporte de Evaluación de Código — Actualizado</div>
+    <h1>FL-SNF <span>Backend</span> — Arquitectura &amp; Seguridad</h1>
+    <div class="meta">
+      Proyecto: <strong>fl-snf-backend</strong> &nbsp;|&nbsp;
+      Stack: <strong>Node.js · Express · MySQL · AWS S3</strong> &nbsp;|&nbsp;
+      Rama: <strong>develop</strong> &nbsp;|&nbsp;
+      Evaluación inicial: <strong>16 jun 2026</strong> &nbsp;|&nbsp;
+      Última actualización: <strong>16 jun 2026</strong>
+    </div>
+  </div>
+
+  <!-- ── Scores actualizados ── -->
+  <div class="scores">
+    <div class="score-card">
+      <div class="label">Arquitectura</div>
+      <div class="score score-blue">A-</div>
+      <div class="sublabel">Capa de servicios uniforme</div>
+      <div class="delta">↑ antes: B+</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Seguridad</div>
+      <div class="score score-green">B+</div>
+      <div class="sublabel">Magic bytes y JWT corregidos</div>
+      <div class="delta">↑ antes: B</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Calidad de Código</div>
+      <div class="score score-blue">A-</div>
+      <div class="sublabel">Logger consistente, sin lógica en rutas</div>
+      <div class="delta">↑ antes: B+</div>
+    </div>
+    <div class="score-card">
+      <div class="label">General</div>
+      <div class="score score-green">A-</div>
+      <div class="sublabel">5 de 15 hallazgos resueltos</div>
+      <div class="delta">↑ antes: B+</div>
+    </div>
+  </div>
+
+  <!-- ── Progreso ── -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      Hallazgos resueltos
+      <span>5 / 15 (33%)</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:33%"></div>
+    </div>
+  </div>
+
+  <!-- ── Correcciones aplicadas ── -->
+  <div class="fixes-banner">
+    <h3>Correcciones Aplicadas en Esta Iteración</h3>
+    <div class="fixes-grid">
+      <div class="fix-item">
+        <div class="fix-icon">&#10003;</div>
+        <div>
+          <strong>Magic bytes conectados al flujo de subida</strong>
+          <span>services/documentosService.js — validateMagicBytes se llama por cada archivo antes de subir a S3</span>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="fix-icon">&#10003;</div>
+        <div>
+          <strong>JWT_EXPIRES_IN con valor por defecto</strong>
+          <span>services/authService.js — fallback a '8h' si la variable de entorno no está configurada</span>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="fix-icon">&#10003;</div>
+        <div>
+          <strong>Paginación en endpoints de listado</strong>
+          <span>obras, usuarios y documentos soportan ?page y ?limit con metadatos de paginación</span>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="fix-icon">&#10003;</div>
+        <div>
+          <strong>Lógica extraída de route handlers</strong>
+          <span>correo.js y notificaciones.js ahora usan controladores y servicios dedicados</span>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="fix-icon">&#10003;</div>
+        <div>
+          <strong>Logger consistente (Winston)</strong>
+          <span>correoController.js usa logger.error — eliminado el uso de console.error</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Architecture Overview ── -->
+  <div class="section">
+    <div class="section-title">Resumen de Arquitectura</div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>Ciclo de Vida de una Petición</h3>
+      <div class="arch-flow">
+        <div class="arch-box">Cliente</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Rate Limiter</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">CORS + Helmet</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Rutas</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">verifyToken</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">requireRole / requireObraAccess</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Controlador</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Servicio</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">MySQL Pool</div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Patrón Arquitectónico</h3>
+        <p>MVC por capas con separación clara: <strong>Rutas → Controladores → Servicios → Helpers</strong>. Patrón ahora uniforme en todos los módulos — incluyendo correo y notificaciones que fueron refactorizados.</p>
+      </div>
+      <div class="card">
+        <h3>Módulos del Proyecto</h3>
+        <ul>
+          <li><code>server.js</code> — Bootstrap, middleware, rate limiters</li>
+          <li><code>routes/</code> — Routers Express, wiring puro</li>
+          <li><code>controllers/</code> — Manejo de petición/respuesta HTTP</li>
+          <li><code>services/</code> — Lógica de negocio y consultas BD</li>
+          <li><code>middleware/</code> — Auth (JWT + Google OAuth)</li>
+          <li><code>helpers/</code> — Pool BD, S3, mailer, logger, upload</li>
+          <li><code>db/</code> — Schema, migraciones, seed</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Dependencias Externas</h3>
+        <ul>
+          <li>MySQL2 — almacenamiento relacional</li>
+          <li>AWS S3 (compatible) — almacenamiento de documentos</li>
+          <li>Resend — correo transaccional</li>
+          <li>Google OAuth2 — inicio de sesión SSO</li>
+          <li>JWT + bcryptjs — autenticación y hashing</li>
+          <li>Winston — logging estructurado</li>
+          <li>Helmet + express-rate-limit — seguridad HTTP</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Modelo de Autorización</h3>
+        <ul>
+          <li><strong>admin</strong> — acceso total a todos los recursos</li>
+          <li><strong>usuario</strong> — acotado a su <code>obra_id</code> asignada</li>
+          <li>JWT lleva <code>id</code>, <code>rol</code>, <code>obra_id</code>, <code>jti</code></li>
+          <li>Revocación de tokens vía tabla <code>sesiones_revocadas</code> (lista negra JTI)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Architecture Findings ── -->
+  <div class="section">
+    <div class="section-title">Hallazgos de Arquitectura</div>
+    <div class="findings">
+
+      <div class="finding resolved">
+        <div class="finding-header">
+          <span class="badge badge-resolved">Resuelto</span>
+          <span class="finding-title">Lógica de Negocio Filtrada Hacia los Route Handlers</span>
+        </div>
+        <div class="finding-body">
+          <p><strong>Corregido:</strong> Se crearon <code>services/notificacionesService.js</code>, <code>controllers/correoController.js</code> y <code>controllers/notificacionesController.js</code>. La lógica de BD se movió a los servicios, y <code>routes/correo.js</code> y <code>routes/notificaciones.js</code> quedaron en wiring puro (~13 líneas cada uno). La arquitectura Routes → Controllers → Services es ahora uniforme en todo el proyecto.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-medium">Medio</span>
+          <span class="finding-title">Sin Middleware de Validación de Entradas</span>
+        </div>
+        <div class="finding-body">
+          <p>No existe una librería de validación estructurada (Joi, Zod, express-validator). La validación de entradas es ad-hoc — solo verificaciones de campos requeridos. Restricciones como longitud máxima, formato de correo, valores de enum y formato UUID no se aplican en la capa API.</p>
+          <p>Por ejemplo, el campo <code>rol</code> en <code>POST /api/usuarios</code> se pasa directamente a la BD. Si se envía un rol inválido, el ENUM de MySQL lo rechazará con un error crudo en lugar de una respuesta 400 limpia.</p>
+          <p><strong>Afecta:</strong> Todos los controladores — <code>controllers/usuariosController.js</code> <code>controllers/obrasController.js</code> etc.</p>
+        </div>
+      </div>
+
+      <div class="finding resolved">
+        <div class="finding-header">
+          <span class="badge badge-resolved">Resuelto</span>
+          <span class="finding-title">Sin Paginación en Endpoints de Listado</span>
+        </div>
+        <div class="finding-body">
+          <p><strong>Corregido:</strong> Los tres endpoints de listado ahora soportan <code>?page</code> y <code>?limit</code> (default: 20, máximo: 100). La respuesta incluye el objeto <code>pagination: { total, page, limit, pages }</code>. Los servicios ejecutan un <code>COUNT(*)</code> seguido de <code>SELECT ... LIMIT ? OFFSET ?</code>.</p>
+          <p><strong>Archivos actualizados:</strong> <code>services/obrasService.js</code> · <code>services/usuariosService.js</code> · <code>services/documentosService.js</code> y sus controladores correspondientes.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">Estrategia de Eliminación Inconsistente</span>
+        </div>
+        <div class="finding-body">
+          <p>Los <strong>usuarios</strong> y <strong>obras</strong> se eliminan de forma lógica (<code>activo = 0</code>), pero los <strong>proyectos</strong> y <strong>documentos</strong> se eliminan físicamente. No existe trazabilidad de los registros eliminados físicamente. Si un proyecto o documento se borra por error, no hay forma de recuperarlo.</p>
+          <p>Se recomienda unificar la estrategia de borrado lógico o implementar una tabla de auditoría.</p>
+          <p><strong>Afecta:</strong> <code>services/proyectosService.js:44</code> &nbsp; <code>services/documentosService.js:82</code></p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">Sin Versionado de API</span>
+        </div>
+        <div class="finding-body">
+          <p>Todas las rutas están montadas bajo <code>/api/...</code> sin prefijo de versión (ej. <code>/api/v1/...</code>). Cualquier cambio que rompa compatibilidad afectará a todos los consumidores simultáneamente sin ruta de migración.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-info">Info</span>
+          <span class="finding-title">Helper de BD Importado Inline Dentro de una Función</span>
+        </div>
+        <div class="finding-body">
+          <p>En <code>documentosController.js</code> línea 78, el pool de base de datos se requiere dentro del cuerpo de una función (<code>require('../helpers/db')</code>) en lugar de en el nivel superior del módulo. Aunque Node.js cachea módulos, esto es inconsistente y hace poco claras las dependencias.</p>
+          <p><strong>Afecta:</strong> <code>controllers/documentosController.js:78</code></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Security Positives ── -->
+  <div class="section">
+    <div class="section-title">Fortalezas de Seguridad</div>
+    <div class="positive-list">
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Cabeceras de seguridad con Helmet.js</strong> — <span>Aplica automáticamente X-Content-Type-Options, X-Frame-Options, HSTS, CSP y otras cabeceras HTTP protectoras.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Lista blanca estricta de orígenes CORS</strong> — <span>Solo se permiten <code>FRONTEND_URL</code> y <code>EXTRA_ORIGINS</code>. Localhost solo en entornos no productivos. Sin comodines. Orígenes bloqueados se registran con mensaje descriptivo.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Rate limiting en endpoints sensibles</strong> — <span>Login: 10 req/15min por IP. Recuperar contraseña: 5 req/hr por IP. Correo: 10 req/hr por IP.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Revocación de tokens JWT (lista negra JTI)</strong> — <span>Cada token lleva un UUID <code>jti</code>. Al hacer logout, se inserta en <code>sesiones_revocadas</code>. El middleware valida esta tabla en cada petición.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>bcrypt para hashing de contraseñas</strong> — <span>Factor de costo 10. Las contraseñas nunca se almacenan en texto plano ni se devuelven en respuestas de la API.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Prevención de inyección SQL</strong> — <span>Todas las consultas usan <code>mysql2</code> con placeholders <code>?</code> parametrizados. Sin interpolación de cadenas en SQL.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Validación de tipo de archivo con magic bytes</strong> — <span>Uploads validan MIME type contra lista blanca y verifican las firmas de bytes reales del archivo (PDF, PNG, JPEG, etc.) antes de subir a S3. <strong>Corregido: ahora se llama correctamente en el flujo de subida.</strong></span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>JWT con expiración garantizada</strong> — <span>Tokens firmados con <code>process.env.JWT_EXPIRES_IN || '8h'</code>. Si la variable de entorno no está configurada, se aplica un límite de 8 horas por defecto. <strong>Corregido en esta iteración.</strong></span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Control de acceso basado en roles (RBAC)</strong> — <span><code>requireRole('admin')</code> protege todos los endpoints exclusivos de administrador. El rol está embebido en el JWT verificado.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Acotación de recursos por obra</strong> — <span><code>requireObraAccess</code> garantiza que usuarios no administradores solo accedan a datos de su <code>obra_id</code>, previniendo escalada horizontal de privilegios.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Sanitización de errores en producción</strong> — <span>El manejador global devuelve <code>'Error interno del servidor'</code> en producción. Sin stack traces expuestos al cliente.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Respuesta genérica en recuperar contraseña</strong> — <span>El flujo devuelve el mismo mensaje independientemente de si el correo existe, previniendo enumeración de usuarios.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>TLS en la base de datos de producción</strong> — <span>Conexión a BD con SSL y <code>rejectUnauthorized: true</code> por defecto en entornos no-desarrollo.</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Auto-eliminación prevenida</strong> — <span>Un administrador no puede eliminar su propia cuenta (<code>usuariosController.js:46</code>).</span></div>
+      </div>
+      <div class="positive-item">
+        <div class="icon">&#10003;</div>
+        <div><strong>Escape de HTML en plantillas de correo</strong> — <span>Valores del usuario renderizados en HTML de correo procesados con <code>escapeHtml()</code>, previniendo inyección HTML.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Security Findings ── -->
+  <div class="section">
+    <div class="section-title">Hallazgos de Seguridad</div>
+    <div class="findings">
+
+      <div class="finding resolved">
+        <div class="finding-header">
+          <span class="badge badge-resolved">Resuelto</span>
+          <span class="finding-title">La Validación de Magic Bytes Estaba Definida Pero Nunca Se Llamaba</span>
+        </div>
+        <div class="finding-body">
+          <p><strong>Corregido:</strong> Se importa <code>validateMagicBytes</code> desde <code>helpers/upload.js</code> en <code>services/documentosService.js</code> y se llama por cada archivo dentro de <code>insertMany()</code> antes de subir a S3. Si el contenido del archivo no coincide con el MIME type declarado, se lanza un error <code>400</code> con mensaje descriptivo y la subida se cancela.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-medium">Medio</span>
+          <span class="finding-title">Sin Protección de Fuerza Bruta por Cuenta</span>
+        </div>
+        <div class="finding-body">
+          <p>El rate limiting se aplica únicamente por <strong>dirección IP</strong> (10 intentos / 15 min). Un atacante con múltiples IPs puede realizar ataques de fuerza bruta distribuidos contra una cuenta específica sin alcanzar el límite por IP.</p>
+          <p>No existe bloqueo de cuenta, contador de intentos fallidos por usuario, ni desafío CAPTCHA tras fallos repetidos.</p>
+          <p><strong>Solución recomendada:</strong> Rastrear intentos fallidos por <code>email</code> en BD. Tras N fallos (ej. 10), bloquear la cuenta temporalmente o requerir confirmación por correo para desbloquear.</p>
+          <p><strong>Afecta:</strong> <code>services/authService.js:35</code> &nbsp; <code>server.js:75</code></p>
+        </div>
+      </div>
+
+      <div class="finding resolved">
+        <div class="finding-header">
+          <span class="badge badge-resolved">Resuelto</span>
+          <span class="finding-title">JWT_EXPIRES_IN Sin Valor por Defecto</span>
+        </div>
+        <div class="finding-body">
+          <p><strong>Corregido:</strong> La firma del token ahora usa <code>process.env.JWT_EXPIRES_IN || '8h'</code>. Si la variable de entorno no está configurada, los tokens expiran en 8 horas por defecto, eliminando el riesgo de tokens sin expiración.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">confirmUpload No Valida el Tipo MIME</span>
+        </div>
+        <div class="finding-body">
+          <p>El endpoint <code>POST /:obraId/confirm-upload</code> valida que <code>key</code> empiece con <code>documentos/</code>, pero <strong>no verifica</strong> que <code>mimetype</code> esté en la lista <code>ALLOWED_MIME</code>. Cualquier cadena de tipo MIME arbitraria puede almacenarse en la base de datos.</p>
+          <p><strong>Afecta:</strong> <code>controllers/documentosController.js:66</code></p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">La Tabla sesiones_revocadas No Tiene Mecanismo de Limpieza</span>
+        </div>
+        <div class="finding-body">
+          <p>La tabla almacena JTIs revocados con columna <code>expira_en</code>, pero ningún proceso elimina filas expiradas. A largo plazo, la tabla crecerá indefinidamente, aumentando el tiempo de consulta en cada petición autenticada.</p>
+          <p><strong>Solución:</strong> Evento de BD programado o cron de Node.js para ejecutar <code>DELETE FROM sesiones_revocadas WHERE expira_en &lt; NOW()</code>.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">Longitud Mínima de Contraseña Solo Aplicada en Reset, No en Creación</span>
+        </div>
+        <div class="finding-body">
+          <p><code>resetPassword</code> verifica <code>password.length &lt; 6</code>. Sin embargo, <code>POST /api/usuarios</code> (crear usuario) <strong>no tiene verificación de longitud</strong>. Un administrador podría crear un usuario con una contraseña de 1 carácter.</p>
+          <p><strong>Afecta:</strong> <code>controllers/authController.js:69</code> (tiene la verificación) vs <code>controllers/usuariosController.js:20</code> (sin verificación)</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-low">Bajo</span>
+          <span class="finding-title">El Campo rol No Se Valida Contra el Enum en la Capa de Aplicación</span>
+        </div>
+        <div class="finding-body">
+          <p>El valor de <code>rol</code> del body se pasa directamente al servicio sin validación en la capa de aplicación. Si se envía un valor inválido, el ENUM de MySQL lanzará un error crudo en vez de un 400 descriptivo.</p>
+          <p><strong>Solución:</strong> <code>if (!['admin','usuario'].includes(rol)) return res.status(400)...</code></p>
+          <p><strong>Afecta:</strong> <code>controllers/usuariosController.js:27</code></p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-info">Info</span>
+          <span class="finding-title">Correos Electrónicos Registrados a Nivel Info</span>
+        </div>
+        <div class="finding-body">
+          <p>Los intentos de login registran el correo completo a nivel <code>info</code>. Los archivos de log en <code>logs/app.log</code> podrían exponer PII si se envían a un agregador externo sin enmascarar.</p>
+          <p><strong>Solución:</strong> Enmascarar correos en logs (ej. <code>u***@dominio.com</code>) o bajar a nivel <code>debug</code>.</p>
+          <p><strong>Afecta:</strong> <code>services/authService.js:37</code></p>
+        </div>
+      </div>
+
+      <div class="finding resolved">
+        <div class="finding-header">
+          <span class="badge badge-resolved">Resuelto</span>
+          <span class="finding-title">Uso Mixto de Logger (console.error vs Winston)</span>
+        </div>
+        <div class="finding-body">
+          <p><strong>Corregido:</strong> El nuevo <code>controllers/correoController.js</code> usa <code>logger.error</code> (Winston) en todos los handlers. El uso de <code>console.error</code> en <code>routes/correo.js</code> fue eliminado junto con la lógica que contenía.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-info">Info</span>
+          <span class="finding-title">Helper de BD Importado Inline Dentro de una Función</span>
+        </div>
+        <div class="finding-body">
+          <p>En <code>documentosController.js</code> línea 78, el pool se requiere dentro del cuerpo de la función en vez del nivel superior del módulo. Inconsistente con el resto del código.</p>
+          <p><strong>Afecta:</strong> <code>controllers/documentosController.js:78</code></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Summary table ── -->
+  <div class="section">
+    <div class="section-title">Resumen de Hallazgos</div>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Estado</th>
+          <th>Severidad</th>
+          <th>Área</th>
+          <th>Hallazgo</th>
+          <th>Archivo(s)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-resolved">
+          <td>1</td>
+          <td><span class="badge badge-resolved">Resuelto</span></td>
+          <td>Medio</td>
+          <td>Seguridad</td>
+          <td>Magic bytes definidos pero nunca llamados</td>
+          <td><code>services/documentosService.js</code></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><span class="badge badge-medium">Abierto</span></td>
+          <td>Medio</td>
+          <td>Seguridad</td>
+          <td>Sin protección de fuerza bruta por cuenta</td>
+          <td><code>services/authService.js</code></td>
+        </tr>
+        <tr class="row-resolved">
+          <td>3</td>
+          <td><span class="badge badge-resolved">Resuelto</span></td>
+          <td>Medio</td>
+          <td>Seguridad</td>
+          <td>JWT_EXPIRES_IN sin valor por defecto</td>
+          <td><code>services/authService.js:22</code></td>
+        </tr>
+        <tr class="row-resolved">
+          <td>4</td>
+          <td><span class="badge badge-resolved">Resuelto</span></td>
+          <td>Medio</td>
+          <td>Arquitectura</td>
+          <td>Lógica de negocio en route handlers</td>
+          <td><code>routes/correo.js · routes/notificaciones.js</code></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><span class="badge badge-medium">Abierto</span></td>
+          <td>Medio</td>
+          <td>Arquitectura</td>
+          <td>Sin validación estructurada de entradas (Joi/Zod)</td>
+          <td>Todos los controladores</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><span class="badge badge-low">Abierto</span></td>
+          <td>Bajo</td>
+          <td>Seguridad</td>
+          <td>confirmUpload no valida mimetype contra ALLOWED_MIME</td>
+          <td><code>controllers/documentosController.js:66</code></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><span class="badge badge-low">Abierto</span></td>
+          <td>Bajo</td>
+          <td>Seguridad</td>
+          <td>sesiones_revocadas crece indefinidamente</td>
+          <td><code>middleware/auth.js</code></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><span class="badge badge-low">Abierto</span></td>
+          <td>Bajo</td>
+          <td>Seguridad</td>
+          <td>Longitud mínima de contraseña no aplicada en creación</td>
+          <td><code>controllers/usuariosController.js:20</code></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><span class="badge badge-low">Abierto</span></td>
+          <td>Bajo</td>
+          <td>Seguridad</td>
+          <td>Campo rol no validado contra enum en capa de aplicación</td>
+          <td><code>controllers/usuariosController.js:27</code></td>
+        </tr>
+        <tr class="row-resolved">
+          <td>10</td>
+          <td><span class="badge badge-resolved">Resuelto</span></td>
+          <td>Bajo</td>
+          <td>Arquitectura</td>
+          <td>Sin paginación en endpoints de listado</td>
+          <td><code>services/obras · usuarios · documentosService.js</code></td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td><span class="badge badge-low">Abierto</span></td>
+          <td>Bajo</td>
+          <td>Arquitectura</td>
+          <td>Estrategia de eliminación inconsistente (lógica vs física)</td>
+          <td><code>services/proyectosService.js · documentosService.js</code></td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td><span class="badge badge-info">Abierto</span></td>
+          <td>Info</td>
+          <td>Privacidad</td>
+          <td>Correos completos en logs a nivel info (PII)</td>
+          <td><code>services/authService.js:37</code></td>
+        </tr>
+        <tr class="row-resolved">
+          <td>13</td>
+          <td><span class="badge badge-resolved">Resuelto</span></td>
+          <td>Info</td>
+          <td>Calidad de Código</td>
+          <td>console.error en lugar de Winston logger</td>
+          <td><code>controllers/correoController.js</code></td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td><span class="badge badge-info">Abierto</span></td>
+          <td>Info</td>
+          <td>Calidad de Código</td>
+          <td>Helper de BD importado inline en función</td>
+          <td><code>controllers/documentosController.js:78</code></td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td><span class="badge badge-info">Abierto</span></td>
+          <td>Info</td>
+          <td>Arquitectura</td>
+          <td>Sin versionado de API (/api/v1/)</td>
+          <td><code>server.js</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── Recomendaciones pendientes ── -->
+  <div class="section">
+    <div class="section-title">Recomendaciones Pendientes</div>
+    <div class="findings">
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-pri1">1 — Próxima Iteración</span>
+          <span class="finding-title">Agregar validación estructurada de entradas (Joi o Zod)</span>
+        </div>
+        <div class="finding-body">
+          <p>Introducir un middleware de validación para definir esquemas por endpoint: campos requeridos, longitudes máximas, valores de enum, formato de correo. Esto resuelve simultáneamente los hallazgos #5 (validación general), #8 (longitud de contraseña) y #9 (validación del campo rol).</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-pri1">2 — Próxima Iteración</span>
+          <span class="finding-title">Validar mimetype en confirmUpload</span>
+        </div>
+        <div class="finding-body">
+          <p>Agregar <code>if (!ALLOWED_MIME.has(mimetype)) return res.status(400)...</code> en <code>controllers/documentosController.js:66</code> antes de insertar el registro en la BD.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge badge-pri2">3 — Backlog</span>
+          <span class="finding-title">Limpieza de sesiones_revocadas + bloqueo de cuenta por fuerza bruta</span>
+        </div>
+        <div class="finding-body">
+          <p>(a) Agregar un evento de BD programado o cron de Node.js para purgar filas expiradas de <code>sesiones_revocadas</code>. (b) Implementar un contador de intentos de login fallidos por cuenta con bloqueo temporal tras N fallos consecutivos.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer>
+    Generado por Claude Code &nbsp;·&nbsp; FL-SNF Backend &nbsp;·&nbsp; Fundación Loyola &nbsp;·&nbsp; Junio 2026
+  </footer>
+
+</div>
+</body>
+</html>

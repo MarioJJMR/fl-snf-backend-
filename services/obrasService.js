@@ -1,9 +1,14 @@
 const pool = require('../helpers/db');
 const { v4: uuidv4 } = require('uuid');
 
-async function getAll() {
-  const [rows] = await pool.query('SELECT * FROM obras WHERE activo = 1 ORDER BY fecha_registro DESC');
-  return rows;
+async function getAll({ page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit;
+  const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM obras WHERE activo = 1');
+  const [rows] = await pool.query(
+    'SELECT * FROM obras WHERE activo = 1 ORDER BY fecha_registro DESC LIMIT ? OFFSET ?',
+    [limit, offset]
+  );
+  return { rows, total };
 }
 
 async function getById(id) {

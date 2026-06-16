@@ -19,7 +19,7 @@ function signToken(user) {
   const token = jwt.sign(
     { id: user.id, usuario: user.usuario, rol: user.rol, obra_id: user.obra_id || null, jti },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
   );
   return { token, jti };
 }
