@@ -46,8 +46,9 @@ describe('POST /api/auth/forgot-password', () => {
 
   test('200 — email registrado: inserta token y envía correo', async () => {
     pool.query
-      .mockResolvedValueOnce([[MOCK_USER]])  // SELECT usuario
-      .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT token
+      .mockResolvedValueOnce([[MOCK_USER]])          // SELECT usuario
+      .mockResolvedValueOnce([{ affectedRows: 0 }])  // UPDATE old tokens (invalidate)
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT new token
 
     const res = await request(app)
       .post('/api/auth/forgot-password')
@@ -55,7 +56,7 @@ describe('POST /api/auth/forgot-password', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(pool.query).toHaveBeenCalledTimes(2);
+    expect(pool.query).toHaveBeenCalledTimes(3);
     expect(mailer.sendMail).toHaveBeenCalledTimes(1);
 
     const mailCall = mailer.sendMail.mock.calls[0][0];

@@ -9,8 +9,14 @@ const getByObra = async (req, res, next) => {
 
 const getAll = async (req, res, next) => {
   try {
-    const data = await usuariosService.getAll();
-    res.json({ success: true, data });
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const { rows, total } = await usuariosService.getAll({ page, limit });
+    res.json({
+      success: true,
+      data: rows,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    });
   } catch (err) { next(err); }
 };
 

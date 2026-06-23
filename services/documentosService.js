@@ -2,14 +2,20 @@ const { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aw
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const pool = require('../helpers/db');
 const { s3, BUCKET_NAME } = require('../helpers/s3');
+const { validateMagicBytes } = require('../helpers/upload');
 
-async function getAll(obraId) {
-  const [rows] = await pool.query(
-    `SELECT id, nombre_original, nombre_archivo, categoria, mime_type, tamano, subido_por, fecha_subida
-     FROM documentos WHERE obra_id = ? ORDER BY categoria, fecha_subida DESC`,
+async function getAll(obraId, { page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit;
+  const [[{ total }]] = await pool.query(
+    'SELECT COUNT(*) AS total FROM documentos WHERE obra_id = ?',
     [obraId]
   );
-  return rows;
+  const [rows] = await pool.query(
+    `SELECT id, nombre_original, nombre_archivo, categoria, mime_type, tamano, subido_por, fecha_subida
+     FROM documentos WHERE obra_id = ? ORDER BY categoria, fecha_subida DESC LIMIT ? OFFSET ?`,
+    [obraId, limit, offset]
+  );
+  return { rows, total };
 }
 
 async function getById(id) {
@@ -33,6 +39,12 @@ async function insertMany(obraId, files, userId, categoria = 'general') {
   const uploaded = [];
 
   for (const f of files) {
+    if (!validateMagicBytes(f.buffer, f.mimetype)) {
+      const err = new Error(`El contenido del archivo "${f.originalname}" no coincide con el tipo declarado (${f.mimetype}).`);
+      err.status = 400;
+      throw err;
+    }
+
     const ts = Date.now();
     const safe = f.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `documentos/${categoria}/${ts}_${safe}`;
