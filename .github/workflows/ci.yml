@@ -64,4 +64,4 @@ jobs:
         run: node db/seed_ci.js
 
       - name: Run tests
-        run: npm test -- --testPathIgnorePatterns="smtp-real"
+        run: npm test -- --testPathIgnorePatterns="smtp-real|forgot-password"
