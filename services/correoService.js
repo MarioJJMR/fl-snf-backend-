@@ -1,3 +1,4 @@
+const pool = require('../helpers/db');
 const { sendMail } = require('../helpers/mailer');
 
 function escapeHtml(str) {
@@ -109,4 +110,68 @@ async function sendNotificacion({ asunto, mensaje, obraNombre, destinatarioEmail
   await sendMail({ to: destinatarioEmail, subject: `[FL-SNF] ${escapeHtml(asunto)}`, html });
 }
 
-module.exports = { sendSondeo, sendSoporte, sendNotificacion };
+async function sendNotificacionAdmin({ asunto, mensaje, obras, rolFilter, adminId, adminNombre }) {
+  let usuariosQuery;
+
+  if (obras === 'todas' || (Array.isArray(obras) && obras.includes('todas'))) {
+    const rolClause = rolFilter ? ' AND u.rol = ?' : '';
+    [usuariosQuery] = await pool.query(
+      `SELECT u.email, u.nombre, o.nombre_obra
+       FROM usuarios u JOIN obras o ON u.obra_id = o.id
+       WHERE u.email IS NOT NULL AND u.activo = 1${rolClause}`,
+      rolFilter ? [rolFilter] : []
+    );
+  } else {
+    const ids = Array.isArray(obras) ? obras : [obras];
+    const rolClause = rolFilter ? ' AND u.rol = ?' : '';
+    [usuariosQuery] = await pool.query(
+      `SELECT u.email, u.nombre, o.nombre_obra
+       FROM usuarios u JOIN obras o ON u.obra_id = o.id
+       WHERE u.obra_id IN (?) AND u.email IS NOT NULL AND u.activo = 1${rolClause}`,
+      rolFilter ? [ids, rolFilter] : [ids]
+    );
+  }
+
+  if (!usuariosQuery.length) return null;
+
+  const nombresObras = [...new Set(usuariosQuery.map(u => u.nombre_obra))];
+  const correoActivo = !!process.env.RESEND_API_KEY;
+  let totalEnviados = 0;
+
+  if (correoActivo) {
+    for (const u of usuariosQuery) {
+      try {
+        await sendNotificacion({
+          asunto, mensaje,
+          obraNombre: u.nombre_obra,
+          destinatarioEmail: u.email,
+          adminNombre
+        });
+        totalEnviados++;
+      } catch { /* continuar con los demás */ }
+    }
+  }
+
+  const destinatariosJSON = obras === 'todas' ? ['todas'] : (Array.isArray(obras) ? obras : [obras]);
+  await pool.query(
+    `INSERT INTO notificaciones (asunto, mensaje, destinatarios, nombres_obras, enviado_por, total_enviados)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [asunto, mensaje, JSON.stringify(destinatariosJSON), JSON.stringify(nombresObras), adminId, totalEnviados]
+  );
+
+  return { totalEnviados, nombresObras, correoActivo };
+}
+
+async function getHistorial() {
+  const [rows] = await pool.query(
+    `SELECT n.id, n.asunto, n.mensaje, n.destinatarios, n.nombres_obras,
+            n.total_enviados, n.fecha_envio, u.usuario AS enviado_por
+     FROM notificaciones n
+     LEFT JOIN usuarios u ON n.enviado_por = u.id
+     ORDER BY n.fecha_envio DESC
+     LIMIT 100`
+  );
+  return rows;
+}
+
+module.exports = { sendSondeo, sendSoporte, sendNotificacion, sendNotificacionAdmin, getHistorial };

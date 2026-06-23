@@ -2,11 +2,14 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../helpers/db');
 
-async function getAll() {
+async function getAll({ page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit;
+  const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM usuarios WHERE activo = 1');
   const [rows] = await pool.query(
-    'SELECT id, usuario, rol, nombre, email, obra_id, activo, fecha_registro FROM usuarios WHERE activo = 1'
+    'SELECT id, usuario, rol, nombre, email, obra_id, activo, fecha_registro FROM usuarios WHERE activo = 1 LIMIT ? OFFSET ?',
+    [limit, offset]
   );
-  return rows;
+  return { rows, total };
 }
 
 async function findById(id) {
