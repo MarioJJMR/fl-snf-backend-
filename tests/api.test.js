@@ -3,6 +3,48 @@ const path = require('path');
 const fs = require('fs');
 const app = require('../server');
 const pool = require('../helpers/db');
+const bcrypt = require('bcryptjs');
+
+// Ensure test users exist so auth-related tests are hermetic in CI
+beforeAll(async () => {
+  // Plain passwords expected by tests
+  const adminPlain = '1234';
+  const obraPlain = '5678';
+
+  // Hash using the same algorithm/rounds as the app
+  const adminHash = await bcrypt.hash(adminPlain, 10);
+  const obraHash = await bcrypt.hash(obraPlain, 10);
+
+  // Ensure admin user exists and has the expected password
+  try {
+    const [adminRows] = await pool.query('SELECT id FROM usuarios WHERE usuario = ?', ['admin']);
+    if (!adminRows || adminRows.length === 0) {
+      await pool.query(
+        'INSERT INTO usuarios (usuario, contrasena, rol, nombre, eliminado) VALUES (?, ?, ?, ?, ?)',
+        ['admin', adminHash, 'admin', 'Admin Test', 0]
+      );
+    } else {
+      // Update password to the known hash to avoid mismatches
+      await pool.query('UPDATE usuarios SET contrasena = ? WHERE usuario = ?', [adminHash, 'admin']);
+    }
+
+    // Ensure obra user exists and has the expected password
+    const [obraRows] = await pool.query('SELECT id FROM usuarios WHERE usuario = ?', ['obra']);
+    if (!obraRows || obraRows.length === 0) {
+      await pool.query(
+        'INSERT INTO usuarios (usuario, contrasena, rol, nombre, eliminado) VALUES (?, ?, ?, ?, ?)',
+        ['obra', obraHash, 'usuario', 'Obra Test', 0]
+      );
+    } else {
+      await pool.query('UPDATE usuarios SET contrasena = ? WHERE usuario = ?', [obraHash, 'obra']);
+    }
+  } catch (err) {
+    // If the usuarios table doesn't exist yet (migrations not run), fail fast with a helpful message
+    // so CI can be adjusted to run migrations before tests.
+    console.error('Error ensuring test users exist:', err.message);
+    throw err;
+  }
+});
 
 // ─── Estado compartido entre tests ────────────────────────────────────────────
 let tokenAdmin = null;
