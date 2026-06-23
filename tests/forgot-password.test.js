@@ -3,6 +3,7 @@ const request = require('supertest');
 // ─── Mocks (must be before any require that loads the modules) ────────────────
 jest.mock('../helpers/db');
 jest.mock('../helpers/mailer');
+jest.mock('../helpers/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), http: jest.fn() }));
 
 const app    = require('../server');
 const pool   = require('../helpers/db');
@@ -69,7 +70,8 @@ describe('POST /api/auth/forgot-password', () => {
   test('500 con detalle — falla el envío SMTP', async () => {
     pool.query
       .mockResolvedValueOnce([[MOCK_USER]])
-      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+      .mockResolvedValueOnce([{ affectedRows: 0 }])  // UPDATE old tokens
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT new token
 
     const smtpError = new Error('Invalid login: 535 5.7.8 Username and password not accepted');
     smtpError.code = 'EAUTH';
