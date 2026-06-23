@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: fl_snf_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      PORT: 3001
+      DB_HOST: 127.0.0.1
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: fl_snf_db
+      DB_PORT: 3306
+      JWT_SECRET: ci-test-jwt-secret
+      JWT_EXPIRES_IN: 8h
+      FRONTEND_URL: http://localhost:3000
+      GCP_CLIENT_ID: test-gcp-client-id
+      BUCKET_NAME: test-bucket
+      BUCKET_ACCESS_KEY_ID: test-key
+      BUCKET_SECRET_ACCESS_KEY: test-secret
+      BUCKET_REGION: us-east-1
+      BUCKET_ENDPOINT: http://localhost:9000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Initialize database schema
+        run: mysql -h 127.0.0.1 -u root -proot fl_snf_db < db/schema.sql
+
+      - name: Run migrations
+        run: node db/migrate.js
+
+      - name: Seed test users
+        run: node db/seed_ci.js
+
+      - name: Run tests
+        run: npm test -- --testPathIgnorePatterns="smtp-real"

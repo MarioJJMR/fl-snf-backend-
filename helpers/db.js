@@ -4,7 +4,7 @@ const logger = require('./logger');
 
 let poolConfig;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
   poolConfig = {
     host:     process.env.DB_HOST || 'localhost',
     port:     Number(process.env.DB_PORT) || 3306,
