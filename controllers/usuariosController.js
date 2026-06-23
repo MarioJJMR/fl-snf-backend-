@@ -49,7 +49,7 @@ const update = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   try {
-    if (req.params.id === req.user.id)
+    if (Number(req.params.id) === req.user.id)
       return res.status(400).json({ success: false, error: 'No puedes eliminar tu propia cuenta' });
 
     const existing = await usuariosService.findById(req.params.id);
