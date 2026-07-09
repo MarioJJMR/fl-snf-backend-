@@ -21,7 +21,9 @@
       "Bash(railway run:*)",
       "Bash(railway link:*)",
       "Bash(railway:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash('/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe' -u root -pDiego83m. -e ' *)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H \"Content-Type: application/json\" -d '{\"usuario\":\"admin\",\"contrasena\":\"Passw0rd!\"}')"
     ]
   }
 }

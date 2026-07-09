@@ -71,10 +71,24 @@ app.use(morgan(':method :url :status :res[content-length]b - :response-time ms',
 
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
 
+const getRateLimitValue = (envVar, fallback) => {
+  const parsed = parseInt(process.env[envVar], 10);
+  return Number.isInteger(parsed) ? parsed : fallback;
+};
+
+// Global API limiter: 100 solicitudes por IP cada 15 minutos
+const apiLimiter = rateLimit({
+  windowMs: getRateLimitValue('RATE_LIMIT_API_WINDOW_MS', 15 * 60 * 1000),
+  max: getRateLimitValue('RATE_LIMIT_API_MAX', 100),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.' }
+});
+
 // Login: 10 intentos por IP cada 15 minutos (bloquea fuerza bruta)
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: getRateLimitValue('RATE_LIMIT_LOGIN_WINDOW_MS', 15 * 60 * 1000),
+  max: getRateLimitValue('RATE_LIMIT_LOGIN_MAX', 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' }
@@ -82,8 +96,8 @@ const loginLimiter = rateLimit({
 
 // Forgot-password: 5 solicitudes por IP cada hora (evita spam de correos)
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
+  windowMs: getRateLimitValue('RATE_LIMIT_FORGOT_PASSWORD_WINDOW_MS', 60 * 60 * 1000),
+  max: getRateLimitValue('RATE_LIMIT_FORGOT_PASSWORD_MAX', 5),
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'Demasiadas solicitudes de recuperación. Intenta de nuevo en una hora.' }
@@ -91,8 +105,8 @@ const forgotPasswordLimiter = rateLimit({
 
 // Correo/sondeo: 10 correos por IP cada hora
 const correoLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
+  windowMs: getRateLimitValue('RATE_LIMIT_CORREO_WINDOW_MS', 60 * 60 * 1000),
+  max: getRateLimitValue('RATE_LIMIT_CORREO_MAX', 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'Demasiados correos enviados. Intenta de nuevo en una hora.' }
@@ -135,6 +149,7 @@ app.get('/api/health', async (req, res) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
+app.use('/api', apiLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/correo', correoLimiter);
