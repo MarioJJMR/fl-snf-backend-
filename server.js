@@ -19,6 +19,8 @@ const documentosRoutes = require('./routes/documentos');
 const correoRoutes = require('./routes/correo');
 const notificacionesRoutes = require('./routes/notificaciones');
 
+const { idempotencyMiddleware, initializeIdempotency } = require('./middleware/idempotencyMiddleware');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -68,6 +70,13 @@ app.use(express.urlencoded({ extended: true }));
 
 const morganStream = { write: (msg) => logger.http(msg.trim()) };
 app.use(morgan(':method :url :status :res[content-length]b - :response-time ms', { stream: morganStream }));
+
+// ─── Idempotency Middleware ──────────────────────────────────────────────────
+// Ensures POST, PUT, PATCH requests with idempotency-key headers return
+// the same result when retried, preventing duplicate operations
+
+initializeIdempotency();
+app.use(idempotencyMiddleware);
 
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
 
