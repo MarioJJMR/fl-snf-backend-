@@ -7,3 +7,4 @@ logs/
 .vs/
 /.claude
 /mysql_data
+local_floci_deploy.yaml

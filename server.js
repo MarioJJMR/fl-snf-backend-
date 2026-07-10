@@ -19,6 +19,8 @@ const documentosRoutes = require('./routes/documentos');
 const correoRoutes = require('./routes/correo');
 const notificacionesRoutes = require('./routes/notificaciones');
 
+const { idempotencyMiddleware, initializeIdempotency } = require('./middleware/idempotencyMiddleware');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -68,6 +70,16 @@ app.use(express.urlencoded({ extended: true }));
 
 const morganStream = { write: (msg) => logger.http(msg.trim()) };
 app.use(morgan(':method :url :status :res[content-length]b - :response-time ms', { stream: morganStream }));
+
+// ─── Idempotency Middleware ──────────────────────────────────────────────────
+// Ensures POST, PUT, PATCH requests with idempotency-key headers return
+// the same result when retried, preventing duplicate operations.
+// Scoped to /api/usuarios only — the one resource with version-tracked
+// create/update support (see controllers/usuariosController.js). Applying it
+// app-wide would force headers onto routes like auth login/logout that have
+// no idempotency support and aren't natural fits for it.
+
+initializeIdempotency();
 
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
 
@@ -156,7 +168,7 @@ app.use('/api/correo', correoLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/obras', obrasRoutes);
-app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/usuarios', idempotencyMiddleware, usuariosRoutes);
 app.use('/api/formularios', formulariosRoutes);
 app.use('/api/proyectos', proyectosRoutes);
 app.use('/api/documentos', documentosRoutes);
