@@ -404,23 +404,32 @@ describe('GET /api/usuarios', () => {
   });
 });
 
+// /api/usuarios requires an idempotency-key header on POST/PUT (see middleware/idempotencyMiddleware.js)
+const IDEMPOTENCY_KEY = 'test-idempotency-key-jest';
+
 describe('POST /api/usuarios', () => {
   test('retorna 400 si faltan campos obligatorios', async () => {
     const res = await request(app)
       .post('/api/usuarios')
       .set('Authorization', `Bearer ${tokenAdmin}`)
+      .set('idempotency-key', IDEMPOTENCY_KEY)
       .send({ usuario: 'solousuario' });
     expect(res.status).toBe(400);
   });
 
   test('crea usuario nuevo correctamente', async () => {
     pool.query
-      .mockResolvedValueOnce([[]])               // existsByUsername → not found
-      .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT
+      .mockResolvedValueOnce([[]])                          // idempotencyMiddleware: getCachedResponse → cache miss
+      .mockResolvedValueOnce([[]])                          // existsByUsername → not found
+      .mockResolvedValueOnce([{ affectedRows: 1 }])         // INSERT usuario
+      .mockResolvedValueOnce([{ affectedRows: 1 }])         // incrementVersion: INSERT version_tracking
+      .mockResolvedValueOnce([[{ version: 1 }]])            // incrementVersion: SELECT version
+      .mockResolvedValueOnce([[{ version: 1 }]]);           // withVersion: SELECT version
 
     const res = await request(app)
       .post('/api/usuarios')
       .set('Authorization', `Bearer ${tokenAdmin}`)
+      .set('idempotency-key', IDEMPOTENCY_KEY)
       .send({ usuario: 'test_jest_user', contrasena: 'pass123', rol: 'usuario', nombre: 'Test Jest' });
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -428,11 +437,14 @@ describe('POST /api/usuarios', () => {
   });
 
   test('retorna 409 si el usuario ya existe', async () => {
-    pool.query.mockResolvedValueOnce([[{ id: 'existing-id' }]]); // existsByUsername → found
+    pool.query
+      .mockResolvedValueOnce([[]])                          // idempotencyMiddleware: getCachedResponse → cache miss
+      .mockResolvedValueOnce([[{ id: 'existing-id' }]]);    // existsByUsername → found
 
     const res = await request(app)
       .post('/api/usuarios')
       .set('Authorization', `Bearer ${tokenAdmin}`)
+      .set('idempotency-key', IDEMPOTENCY_KEY)
       .send({ usuario: 'test_jest_user', contrasena: 'otro123' });
     expect(res.status).toBe(409);
     expect(res.body.success).toBe(false);
@@ -442,16 +454,21 @@ describe('POST /api/usuarios', () => {
 describe('PUT /api/usuarios/:id', () => {
   test('actualiza el usuario creado', async () => {
     pool.query
-      .mockResolvedValueOnce([[{ id: usuarioCreado }]])  // findById (exists check)
-      .mockResolvedValueOnce([{ affectedRows: 1 }])       // UPDATE
-      .mockResolvedValueOnce([[{                          // SELECT after UPDATE
+      .mockResolvedValueOnce([[]])                          // idempotencyMiddleware: getCachedResponse → cache miss
+      .mockResolvedValueOnce([[{ id: usuarioCreado }]])     // findById (exists check)
+      .mockResolvedValueOnce([{ affectedRows: 1 }])         // UPDATE
+      .mockResolvedValueOnce([[{                            // SELECT after UPDATE
         id: usuarioCreado, usuario: 'test_jest_user', rol: 'usuario',
         nombre: 'Test Jest Actualizado', email: null, obra_id: null, activo: 1,
-      }]]);
+      }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }])         // incrementVersion: INSERT/UPDATE version_tracking
+      .mockResolvedValueOnce([[{ version: 2 }]])            // incrementVersion: SELECT version
+      .mockResolvedValueOnce([[{ version: 2 }]]);           // withVersion: SELECT version
 
     const res = await request(app)
       .put(`/api/usuarios/${usuarioCreado}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
+      .set('idempotency-key', IDEMPOTENCY_KEY)
       .send({ nombre: 'Test Jest Actualizado', rol: 'usuario' });
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

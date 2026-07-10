@@ -1,4 +1,5 @@
 const usuariosService = require('../services/usuariosService');
+const idempotencyHelper = require('../helpers/idempotencyHelper');
 
 const getByObra = async (req, res, next) => {
   try {
@@ -31,7 +32,19 @@ const create = async (req, res, next) => {
       return res.status(409).json({ success: false, error: 'El usuario ya existe' });
 
     const data = await usuariosService.create({ usuario, contrasena, rol, nombre, email, obra_id });
-    res.status(201).json({ success: true, data, message: 'Usuario creado' });
+    
+    // Initialize version tracking for new user
+    await idempotencyHelper.incrementVersion('usuarios', data.id);
+    
+    // Attach version to response
+    const responseData = await idempotencyHelper.withVersion(data, 'usuarios', data.id);
+    
+    res.status(201).json({ 
+      success: true, 
+      data: responseData, 
+      message: 'Usuario creado',
+      _idempotency_key: req.idempotencyKey 
+    });
   } catch (err) { next(err); }
 };
 
@@ -41,9 +54,33 @@ const update = async (req, res, next) => {
     const existing = await usuariosService.findById(id);
     if (!existing) return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
 
+    // Check optimistic locking version if provided
+    const clientVersion = parseInt(req.body._version || req.body.version || 0, 10);
+    if (clientVersion > 0) {
+      const versionMatch = await idempotencyHelper.versionMatches(req, 'usuarios', id);
+      if (!versionMatch) {
+        // Version mismatch - resource was modified
+        const currentData = await usuariosService.findById(id);
+        const enrichedData = await idempotencyHelper.withVersion(currentData, 'usuarios', id);
+        return idempotencyHelper.sendConflict(res, enrichedData);
+      }
+    }
+
     const { contrasena, nombre, rol, email, obra_id } = req.body;
     const data = await usuariosService.update(id, { contrasena, nombre, rol, email, obra_id });
-    res.json({ success: true, data, message: 'Usuario actualizado' });
+    
+    // Increment version after successful update
+    await idempotencyHelper.incrementVersion('usuarios', id);
+    
+    // Attach version to response
+    const responseData = await idempotencyHelper.withVersion(data, 'usuarios', id);
+    
+    res.json({ 
+      success: true, 
+      data: responseData, 
+      message: 'Usuario actualizado',
+      _idempotency_key: req.idempotencyKey 
+    });
   } catch (err) { next(err); }
 };
 
