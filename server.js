@@ -73,10 +73,13 @@ app.use(morgan(':method :url :status :res[content-length]b - :response-time ms',
 
 // ─── Idempotency Middleware ──────────────────────────────────────────────────
 // Ensures POST, PUT, PATCH requests with idempotency-key headers return
-// the same result when retried, preventing duplicate operations
+// the same result when retried, preventing duplicate operations.
+// Scoped to /api/usuarios only — the one resource with version-tracked
+// create/update support (see controllers/usuariosController.js). Applying it
+// app-wide would force headers onto routes like auth login/logout that have
+// no idempotency support and aren't natural fits for it.
 
 initializeIdempotency();
-app.use(idempotencyMiddleware);
 
 // ─── Rate Limiters ────────────────────────────────────────────────────────────
 
@@ -165,7 +168,7 @@ app.use('/api/correo', correoLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/obras', obrasRoutes);
-app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/usuarios', idempotencyMiddleware, usuariosRoutes);
 app.use('/api/formularios', formulariosRoutes);
 app.use('/api/proyectos', proyectosRoutes);
 app.use('/api/documentos', documentosRoutes);
