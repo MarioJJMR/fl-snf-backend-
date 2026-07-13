@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const db = require('./helpers/db');
 const logger = require('./helpers/logger');
+const idempotency = require('./middleware/idempotency');
 
 const startTime = Date.now();
 
@@ -150,6 +151,7 @@ app.get('/api/health', async (req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 app.use('/api', apiLimiter);
+app.use('/api', idempotency);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/correo', correoLimiter);
@@ -194,6 +196,21 @@ if (require.main === module) {
     logger.info(`  URL      : http://localhost:${PORT}`);
     logger.info('=================================================');
   });
+
+  // Limpieza periódica de claves de idempotencia expiradas
+  const idempotencyCleanupIntervalMs = getRateLimitValue('IDEMPOTENCY_CLEANUP_INTERVAL_MS', 60 * 60 * 1000);
+  setInterval(async () => {
+    try {
+      const [result] = await db.query('DELETE FROM idempotency_keys WHERE expires_at < NOW()');
+      if (result.affectedRows > 0) {
+        logger.info(`[idempotency] limpieza: ${result.affectedRows} claves expiradas eliminadas`);
+      }
+    } catch (err) {
+      if (err.errno !== 1146) {
+        logger.error(`[idempotency] error en limpieza: ${err.message}`);
+      }
+    }
+  }, idempotencyCleanupIntervalMs).unref();
 }
 
 module.exports = app;

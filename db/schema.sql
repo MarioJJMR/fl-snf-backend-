@@ -78,6 +78,21 @@ CREATE TABLE IF NOT EXISTS documentos (
   FOREIGN KEY (subido_por) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+-- Tabla de claves de idempotencia (Idempotency-Key)
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  idempotency_key   VARCHAR(255) PRIMARY KEY,
+  request_hash      CHAR(64) NOT NULL,
+  method            VARCHAR(10) NOT NULL,
+  path              VARCHAR(500) NOT NULL,
+  status            ENUM('pending', 'completed') NOT NULL DEFAULT 'pending',
+  response_status   INT NULL,
+  response_body     JSON NULL,
+  user_id           VARCHAR(36) NULL,
+  created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+  expires_at        DATETIME NOT NULL,
+  INDEX idx_expires_at (expires_at)
+);
+
 -- Datos iniciales: usuarios por defecto
 -- NOTA: Los hashes de bcrypt a continuación son de referencia y pueden no ser válidos.
 -- Ejecuta `node db/seed.js` para generar hashes válidos e insertar usuarios correctamente.

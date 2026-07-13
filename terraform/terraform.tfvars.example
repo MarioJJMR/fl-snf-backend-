@@ -1,0 +1,14 @@
+frontend_url = "https://your-frontend-domain.example"
+db_host      = "your-db-host"
+db_user      = "your-db-user"
+db_password  = "replace-me"
+db_name      = "fl_snf_db"
+
+mysql_root_password = "replace-me"
+
+jwt_secret = "replace-me"
+
+bucket_name              = "fl-snf-documentos"
+bucket_access_key_id     = "replace-me"
+bucket_secret_access_key = "replace-me"
+bucket_endpoint          = "https://s3.amazonaws.com"
