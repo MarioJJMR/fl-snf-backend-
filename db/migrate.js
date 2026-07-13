@@ -218,12 +218,14 @@ async function migrate() {
     console.log('✅ Tabla idempotency_keys creada');
   } else {
     console.log('✓ Tabla idempotency_keys ya existe');
+  }
+
   // Migración: tabla idempotency_requests (para middleware de idempotencia)
-  const [idempotencyTable] = await conn.query(
+  const [idempotencyRequestsTable] = await conn.query(
     `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
     [dbName, 'idempotency_requests']
   );
-  if (idempotencyTable.length === 0) {
+  if (idempotencyRequestsTable.length === 0) {
     await conn.query(`
       CREATE TABLE idempotency_requests (
         id                INT PRIMARY KEY AUTO_INCREMENT,
