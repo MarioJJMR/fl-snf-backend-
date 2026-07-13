@@ -7,9 +7,7 @@ logs/
 .vs/
 /.claude
 /mysql_data
-<<<<<<< Updated upstream
 local_floci_deploy.yaml
-=======
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.*
@@ -17,5 +15,3 @@ terraform/terraform.tfvars
 terraform/*.auto.tfvars
 local_floci_deploy.yaml
 /.claude
-/.claude
->>>>>>> Stashed changes

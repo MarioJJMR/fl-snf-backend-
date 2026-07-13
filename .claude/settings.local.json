@@ -32,6 +32,15 @@
       "Bash(ls .. 2>&1)",
       "Read(//c/Users/mjj9/Documents/GitHub/**)",
       "Read(//c/Users/mjj9/OneDrive/Documentos/GitHub/fl-snf-frontend-/**)"
+      "Bash(npx jest *)",
+      "Bash(npm ls *)",
+      "Bash(npm test *)",
+      "PowerShell(npm test -- tests/api.test.js 2>&1)",
+      "Bash(node -e \"console.log\\(require.resolve\\('jest-circus/runner'\\)\\)\")",
+      "PowerShell(node -e \"console.log\\(process.cwd\\(\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('jest-config/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('jest/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('jest-cli/package.json'\\).version\\)\")"
     ]
   }
 }

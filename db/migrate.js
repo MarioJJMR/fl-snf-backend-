@@ -218,6 +218,51 @@ async function migrate() {
     console.log('✅ Tabla idempotency_keys creada');
   } else {
     console.log('✓ Tabla idempotency_keys ya existe');
+  // Migración: tabla idempotency_requests (para middleware de idempotencia)
+  const [idempotencyTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'idempotency_requests']
+  );
+  if (idempotencyTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE idempotency_requests (
+        id                INT PRIMARY KEY AUTO_INCREMENT,
+        idempotency_key   VARCHAR(255) NOT NULL UNIQUE,
+        method            VARCHAR(10) NOT NULL,
+        endpoint          VARCHAR(500) NOT NULL,
+        status_code       INT NOT NULL,
+        response_data     JSON NOT NULL,
+        created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at        TIMESTAMP DEFAULT (DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)),
+        INDEX idx_key (idempotency_key),
+        INDEX idx_expires (expires_at)
+      )
+    `);
+    console.log('✅ Tabla idempotency_requests creada');
+  } else {
+    console.log('✓ Tabla idempotency_requests ya existe');
+  }
+
+  // Migración: tabla version_tracking (para optimistic locking)
+  const [versionTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'version_tracking']
+  );
+  if (versionTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE version_tracking (
+        id           INT PRIMARY KEY AUTO_INCREMENT,
+        entity_type  VARCHAR(50) NOT NULL,
+        entity_id    VARCHAR(36) NOT NULL,
+        version      INT NOT NULL,
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_entity (entity_type, entity_id),
+        INDEX idx_entity (entity_type, entity_id)
+      )
+    `);
+    console.log('✅ Tabla version_tracking creada');
+  } else {
+    console.log('✓ Tabla version_tracking ya existe');
   }
 
   await conn.end();
