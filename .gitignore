@@ -8,3 +8,10 @@ logs/
 /.claude
 /mysql_data
 local_floci_deploy.yaml
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/*.auto.tfvars
+local_floci_deploy.yaml
+/.claude

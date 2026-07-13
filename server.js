@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const db = require('./helpers/db');
 const logger = require('./helpers/logger');
+const idempotency = require('./middleware/idempotency');
 
 const startTime = Date.now();
 
@@ -72,12 +73,14 @@ const morganStream = { write: (msg) => logger.http(msg.trim()) };
 app.use(morgan(':method :url :status :res[content-length]b - :response-time ms', { stream: morganStream }));
 
 // ─── Idempotency Middleware ──────────────────────────────────────────────────
-// Ensures POST, PUT, PATCH requests with idempotency-key headers return
-// the same result when retried, preventing duplicate operations.
-// Scoped to /api/usuarios only — the one resource with version-tracked
-// create/update support (see controllers/usuariosController.js). Applying it
-// app-wide would force headers onto routes like auth login/logout that have
-// no idempotency support and aren't natural fits for it.
+// Two independent idempotency systems exist:
+//   - idempotencyMiddleware (idempotency_requests table): mandatory, scoped to
+//     /api/usuarios — the one resource with version-tracked create/update
+//     support (see controllers/usuariosController.js).
+//   - idempotency (idempotency_keys table): optional Stripe-style support for
+//     the rest of /api, only kicks in when a client sends an Idempotency-Key
+//     header. It's mounted per-route below rather than app-wide so it doesn't
+//     stack with idempotencyMiddleware on /api/usuarios.
 
 initializeIdempotency();
 
@@ -166,14 +169,14 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/correo', correoLimiter);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/obras', obrasRoutes);
+app.use('/api/auth', idempotency, authRoutes);
+app.use('/api/obras', idempotency, obrasRoutes);
 app.use('/api/usuarios', idempotencyMiddleware, usuariosRoutes);
-app.use('/api/formularios', formulariosRoutes);
-app.use('/api/proyectos', proyectosRoutes);
-app.use('/api/documentos', documentosRoutes);
-app.use('/api/correo', correoRoutes);
-app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/api/formularios', idempotency, formulariosRoutes);
+app.use('/api/proyectos', idempotency, proyectosRoutes);
+app.use('/api/documentos', idempotency, documentosRoutes);
+app.use('/api/correo', idempotency, correoRoutes);
+app.use('/api/notificaciones', idempotency, notificacionesRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
@@ -206,6 +209,21 @@ if (require.main === module) {
     logger.info(`  URL      : http://localhost:${PORT}`);
     logger.info('=================================================');
   });
+
+  // Limpieza periódica de claves de idempotencia expiradas
+  const idempotencyCleanupIntervalMs = getRateLimitValue('IDEMPOTENCY_CLEANUP_INTERVAL_MS', 60 * 60 * 1000);
+  setInterval(async () => {
+    try {
+      const [result] = await db.query('DELETE FROM idempotency_keys WHERE expires_at < NOW()');
+      if (result.affectedRows > 0) {
+        logger.info(`[idempotency] limpieza: ${result.affectedRows} claves expiradas eliminadas`);
+      }
+    } catch (err) {
+      if (err.errno !== 1146) {
+        logger.error(`[idempotency] error en limpieza: ${err.message}`);
+      }
+    }
+  }, idempotencyCleanupIntervalMs).unref();
 }
 
 module.exports = app;

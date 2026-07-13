@@ -194,12 +194,38 @@ async function migrate() {
     console.log('✓ Tabla notificaciones_vistas ya existe');
   }
 
-  // Migración: tabla idempotency_requests (para middleware de idempotencia)
+  // Migración: tabla idempotency_keys
   const [idempotencyTable] = await conn.query(
+    `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
+    [dbName, 'idempotency_keys']
+  );
+  if (idempotencyTable.length === 0) {
+    await conn.query(`
+      CREATE TABLE idempotency_keys (
+        idempotency_key   VARCHAR(255) PRIMARY KEY,
+        request_hash      CHAR(64) NOT NULL,
+        method            VARCHAR(10) NOT NULL,
+        path              VARCHAR(500) NOT NULL,
+        status            ENUM('pending', 'completed') NOT NULL DEFAULT 'pending',
+        response_status   INT NULL,
+        response_body     JSON NULL,
+        user_id           VARCHAR(36) NULL,
+        created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at        DATETIME NOT NULL,
+        INDEX idx_expires_at (expires_at)
+      )
+    `);
+    console.log('✅ Tabla idempotency_keys creada');
+  } else {
+    console.log('✓ Tabla idempotency_keys ya existe');
+  }
+
+  // Migración: tabla idempotency_requests (para middleware de idempotencia)
+  const [idempotencyRequestsTable] = await conn.query(
     `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?`,
     [dbName, 'idempotency_requests']
   );
-  if (idempotencyTable.length === 0) {
+  if (idempotencyRequestsTable.length === 0) {
     await conn.query(`
       CREATE TABLE idempotency_requests (
         id                INT PRIMARY KEY AUTO_INCREMENT,
