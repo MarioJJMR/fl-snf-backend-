@@ -31,11 +31,16 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
   };
 }
 
+const getEnvInt = (envVar, fallback) => {
+  const parsed = parseInt(process.env[envVar], 10);
+  return Number.isInteger(parsed) ? parsed : fallback;
+};
+
 const pool = mysql.createPool({
   ...poolConfig,
   waitForConnections: true,
-  connectionLimit:    10,
-  queueLimit:         0,
+  connectionLimit:    getEnvInt('DB_POOL_SIZE', 10),
+  queueLimit:         getEnvInt('DB_POOL_QUEUE_LIMIT', 0),
   timezone:           '+00:00',
 });
 
